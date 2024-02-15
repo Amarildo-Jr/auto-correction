@@ -1,23 +1,138 @@
-import { AnswerQuestion } from "@/components/AnswerQuestion";
+import { ExamPage } from "@/components/ExamPage";
 
-export default function ExamPage() {
+const questions = [
+  {
+    id: 1,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: true,
+    alternatives: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
+      "Lorem ipsum dolor sit amet",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    ],
+  },
+  {
+    id: 2,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: true,
+    alternatives: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
+      "Lorem ipsum dolor sit amet",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    ],
+  },
+  {
+    id: 3,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: true,
+    alternatives: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
+      "Lorem ipsum dolor sit amet",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    ],
+  },
+  {
+    id: 4,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 5,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 6,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: true,
+    alternatives: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
+      "Lorem ipsum dolor sit amet",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    ],
+  },
+  {
+    id: 7,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 8,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 9,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 10,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: true,
+    alternatives: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
+      "Lorem ipsum dolor sit amet",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    ],
+  },
+  {
+    id: 11,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 12,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 13,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: false,
+  },
+  {
+    id: 14,
+    question:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    objective: true,
+    alternatives: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
+      "Lorem ipsum dolor sit amet",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
+    ],
+  },
+];
+
+export default function ExamMainPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="p-4 w-full h-1/2">
-        <h1 className="text-4xl text-blue-800">Exam</h1>
-      </div>
-      <AnswerQuestion
-        id={1}
-        question="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt."
-        objective={true}
-        alternatives={[
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-          "Lorem ipsum dolor sit amet",
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-        ]}
-      />
-    </div>
+    <>
+      <ExamPage questions={questions} />
+    </>
   );
 }
