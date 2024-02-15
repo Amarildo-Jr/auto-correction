@@ -1,8 +1,7 @@
-"use client";
-
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
 import { Textarea } from "./ui/textarea";
 
 interface answerQuestionProps {
@@ -10,10 +9,28 @@ interface answerQuestionProps {
   question: string;
   objective: boolean;
   alternatives?: string[];
-  setAnswer: (answerId: number) => void;
+  writtenAnswer?: string;
+  selectedAnswer: (
+    questionId: number,
+    writtenAnswer: string,
+    alternativeId: number
+  ) => void;
 }
 
 export function AnswerQuestion(props: answerQuestionProps) {
+  const [answer, setAnswer] = useState(props.writtenAnswer || "");
+  const [alternativeId, setAlternativeId] = useState(-1);
+
+  const handleAnswerChange = (newAnswer: string) => {
+    setAnswer(newAnswer);
+    props.selectedAnswer(props.id, newAnswer, alternativeId);
+  };
+
+  const handleAlternativeChange = (id: number) => {
+    setAlternativeId(id);
+    props.selectedAnswer(props.id, answer, id);
+  };
+
   return (
     <div className="flex">
       <div className="p-4 w-full flex flex-col gap-y-3 h-1/2">
@@ -34,7 +51,7 @@ export function AnswerQuestion(props: answerQuestionProps) {
                         <RadioGroupItem
                           id={index.toString()}
                           value={`alternative${index}`}
-                          onClick={() => props.setAnswer(index)}
+                          onClick={() => handleAlternativeChange(index)}
                         />
                         <Label htmlFor={index.toString()} className="ml-2">
                           {alternative}
@@ -49,7 +66,11 @@ export function AnswerQuestion(props: answerQuestionProps) {
                 <p className="text-sm italic w-full text-start">
                   Responda a questão utilizando o campo de texto abaixo:
                 </p>
-                <Textarea className="h-48 max-w-screen-3xl" />
+                <Textarea
+                  className="h-48 max-w-screen-3xl"
+                  value={answer}
+                  onChange={(e) => handleAnswerChange(e.target.value)}
+                />
               </div>
             )}
           </div>

@@ -10,7 +10,7 @@ import {
   NotepadText,
   Settings,
 } from "lucide-react";
-import Image from "next/image";
+import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -47,13 +47,7 @@ export function Sidebar(props: SidebarProps) {
   return (
     <div className="fixed top-0 left-0 flex justify-between flex-col gap-4 w-[300px] min-w-[300px] border-r min-h-screen bg-indigo-600">
       <Button variant="ghost" className="w-full h-20 px-5 hover:bg-opacity-5">
-        <Image
-          src="/logo.svg"
-          width={500}
-          height={500}
-          alt="Logo - Check Quest"
-          className=""
-        />
+        <Logo />
       </Button>
       <div className="">
         {menuList.map((option, index) => (

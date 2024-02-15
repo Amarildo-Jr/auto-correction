@@ -130,9 +130,10 @@ const questions = [
 ];
 
 export default function ExamMainPage() {
+  const duration = 10; // 10 minutes
   return (
     <>
-      <ExamPage questions={questions} />
+      <ExamPage questions={questions} duration={duration} />
     </>
   );
 }

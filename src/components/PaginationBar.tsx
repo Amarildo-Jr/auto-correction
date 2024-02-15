@@ -17,7 +17,7 @@ interface PaginationBarProps {
 
 const PaginationBar = (props: PaginationBarProps) => {
   return (
-    <Pagination className="mb-20">
+    <Pagination className="">
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
