@@ -1,139 +1,31 @@
 import { ExamPage } from "@/components/ExamPage";
+import { Config, JsonDB } from "node-json-db";
 
-const questions = [
-  {
-    id: 1,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: true,
-    alternatives: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-      "Lorem ipsum dolor sit amet",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    ],
-  },
-  {
-    id: 2,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: true,
-    alternatives: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-      "Lorem ipsum dolor sit amet",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    ],
-  },
-  {
-    id: 3,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: true,
-    alternatives: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-      "Lorem ipsum dolor sit amet",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    ],
-  },
-  {
-    id: 4,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 5,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 6,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: true,
-    alternatives: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-      "Lorem ipsum dolor sit amet",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    ],
-  },
-  {
-    id: 7,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 8,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 9,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 10,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: true,
-    alternatives: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-      "Lorem ipsum dolor sit amet",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    ],
-  },
-  {
-    id: 11,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 12,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 13,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: false,
-  },
-  {
-    id: 14,
-    question:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    objective: true,
-    alternatives: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus",
-      "Lorem ipsum dolor sit amet",
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis nunc vitae libero luctus, a lacinia nunc tincidunt.",
-    ],
-  },
-];
+interface AnsweredQuestion {
+  id: number;
+  type?: "objective" | "written";
+  writtenAnswer: string;
+  alternativeId: number;
+}
 
-export default function ExamMainPage() {
+interface Question {
+  id: number;
+  question: string;
+  objective: boolean;
+  alternatives?: string[];
+  writtenAnswer?: string;
+}
+
+export default async function ExamMainPage() {
   const duration = 60; // seconds
+
+  const db = new JsonDB(new Config("dataBase", true, false, "/"));
+
+  const questions = await db.getData("/questions");
+
   return (
     <>
-      <ExamPage questions={questions} duration={duration} />
+      <ExamPage duration={duration} questions={questions} />
     </>
   );
 }
