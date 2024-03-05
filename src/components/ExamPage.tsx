@@ -99,7 +99,10 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
         <div className="flex justify-end">
           <Button
             className="mr-8 px-8"
-            onClick={() => router.push("/finish-exam")}
+            onClick={() => {
+              router.push("/finish-exam");
+              console.log(answers);
+            }}
             variant="default"
           >
             Finalizar

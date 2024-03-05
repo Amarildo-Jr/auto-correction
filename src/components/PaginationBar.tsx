@@ -19,7 +19,7 @@ const PaginationBar = (props: PaginationBarProps) => {
   return (
     <Pagination className="">
       <PaginationContent>
-        <PaginationItem>
+        <PaginationItem className=" hover:cursor-pointer">
           <PaginationPrevious
             isActive={props.current !== 1}
             onClick={() => {
@@ -33,18 +33,93 @@ const PaginationBar = (props: PaginationBarProps) => {
 
         {Array.from({ length: props.total }).map((_, index) => {
           const i = index + 1;
-
-          if (i < props.current - 4 || i > props.current + 4) {
+          if (props.current == 1) {
+            if (i <= 5)
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationLink
+                    isActive={props.current === i}
+                    onClick={() => props.onChange(i)}
+                  >
+                    {i}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            else if (i === 6) {
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              );
+            }
+          } else if (props.current == props.total) {
+            if (i >= props.total - 4)
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationLink
+                    isActive={props.current === i}
+                    onClick={() => props.onChange(i)}
+                  >
+                    {i}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            else if (i === props.total - 5) {
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              );
+            }
+          } else if (props.current == 2) {
+            if (i <= props.current + 3)
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationLink
+                    isActive={props.current === i}
+                    onClick={() => props.onChange(i)}
+                  >
+                    {i}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            else if (i === props.current + 4) {
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              );
+            }
+          } else if (props.current == props.total - 1) {
+            if (i >= props.current - 3)
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationLink
+                    isActive={props.current === i}
+                    onClick={() => props.onChange(i)}
+                  >
+                    {i}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            else if (i === props.current - 4) {
+              return (
+                <PaginationItem className=" hover:cursor-pointer" key={i}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              );
+            }
+          } else if (i < props.current - 3 || i > props.current + 3) {
             return null;
-          } else if (i === props.current - 4 || i === props.current + 4) {
+          } else if (i === props.current - 3 || i === props.current + 3) {
             return (
-              <PaginationItem key={i}>
+              <PaginationItem className=" hover:cursor-pointer" key={i}>
                 <PaginationEllipsis />
               </PaginationItem>
             );
           } else {
             return (
-              <PaginationItem key={i}>
+              <PaginationItem className=" hover:cursor-pointer" key={i}>
                 <PaginationLink
                   isActive={props.current === i}
                   onClick={() => props.onChange(i)}
@@ -55,7 +130,7 @@ const PaginationBar = (props: PaginationBarProps) => {
             );
           }
         })}
-        <PaginationItem>
+        <PaginationItem className=" hover:cursor-pointer">
           <PaginationNext
             isActive={props.current !== props.total}
             onClick={() => {
