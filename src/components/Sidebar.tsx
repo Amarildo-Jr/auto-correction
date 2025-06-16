@@ -1,97 +1,170 @@
-"use client";
-
+// components/Sidebar.tsx
 import { useHover } from "@uidotdev/usehooks";
 import clsx from "clsx";
-import {
-  HelpCircle,
-  Home,
-  ListChecks,
-  LogOut,
-  NotepadText,
-  Settings,
-} from "lucide-react";
+import { BookUser, HelpCircle, Home, ListChecks, LogOut, Menu, UserRound } from "lucide-react";
+import { useState } from "react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
+
+interface MenuButtonProps {
+  link: string;
+  icon: React.ReactNode;
+  text: string;
+  currentPath: string;
+  expanded: boolean;
+}
+
+const MenuButton: React.FC<MenuButtonProps> = ({
+  link,
+  icon,
+  text,
+  currentPath,
+  expanded,
+}) => {
+  const [ref, hovering] = useHover();
+
+  const isActive = currentPath === link;
+  const textColor = isActive
+    ? "text-blue-600"
+    : hovering
+      ? "text-blue-500"
+      : "text-gray-900";
+
+  return (
+    <Button
+      variant="ghost"
+      ref={ref}
+      url={link}
+      className={clsx(
+        "w-full flex items-center text-xl justify-start gap-x-3 py-6 transition-all duration-300 ease-in-out",
+        expanded ? "pl-10" : "justify-start ml-2"
+      )}
+    >
+      <span className={clsx("transition-colors duration-300", textColor)}>
+        {icon}
+      </span>
+      <span
+        className={clsx(
+          "transition-all duration-300 ease-in-out",
+          textColor,
+          expanded ? "opacity-100" : "opacity-0"
+        )}
+      >
+        {text}
+      </span>
+    </Button>
+  );
+};
 
 interface SidebarProps {
   currentPath: string;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
-export function Sidebar(props: SidebarProps) {
+export function Sidebar({ currentPath, expanded, onToggle }: SidebarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const menuList = [
     {
-      link: "/dashboard",
+      link: "/admin/dashboard",
       icon: <Home className="w-7 h-7" />,
       text: "Dashboard",
     },
     {
-      link: "/",
+      link: "/admin/exams",
       icon: <ListChecks className="w-7 h-7" />,
-      text: "Exams",
+      text: "Avaliações",
     },
     {
-      link: "/",
-      icon: <NotepadText className="w-7 h-7" />,
-      text: "Reports",
-    },
-    {
-      link: "/",
+      link: "/admin/questions",
       icon: <HelpCircle className="w-7 h-7" />,
-      text: "Questions",
+      text: "Questões",
     },
+    {
+      link: "/admin/classes",
+      icon: <BookUser className="w-7 h-7" />,
+      text: "Turmas",
+    },
+    {
+      link: "/student/profile",
+      icon: <UserRound className="w-7 h-7" />,
+      text: "Perfil",
+    }
   ];
 
-  const [ref, hovering] = useHover();
-
   return (
-    <div className="fixed top-0 left-0 flex justify-between flex-col gap-4 w-[300px] min-w-[300px] border-r min-h-screen bg-indigo-600">
-      <Button variant="ghost" className="w-full h-20 px-5 hover:bg-opacity-5">
-        <Logo />
-      </Button>
-      <div className="">
-        {menuList.map((option, index) => (
-          <Button
-            key={index}
-            variant="ghost"
-            ref={props.currentPath === option.link ? ref : undefined}
-            className={clsx(
-              "w-full flex text-xl text-white justify-start pl-12 gap-x-3 py-6 ",
-              {
-                "pl-0": props.currentPath === option.link,
-              }
-            )}
-          >
-            {props.currentPath === option.link && (
-              <Separator
-                orientation="vertical"
-                className={clsx(
-                  "w-1 h-7 mr-8 bg-white rounded-md",
-                  hovering ? "bg-slate-900" : "bg-white"
-                )}
-              />
-            )}
-            {option.icon}
-            {option.text}
-          </Button>
-        ))}
-      </div>
-      <div className=" mb-20">
-        <Button
-          variant="ghost"
-          className="w-full flex text-xl text-white justify-start pl-12 gap-x-3 py-6"
-        >
-          <Settings className="w-7 h-7" />
-          Settings
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full flex text-xl text-white justify-start pl-12 gap-x-3 py-6"
-        >
-          <LogOut className="w-7 h-7" />
-          Sair
+    <>
+      <div className="lg:hidden fixed top-0 left-0 p-4">
+        <Button variant="ghost" onClick={() => setMobileOpen(!mobileOpen)}>
+          <Menu className="w-7 h-7" />
         </Button>
       </div>
-    </div>
+
+      <div
+        onMouseEnter={() => onToggle()}
+        onMouseLeave={() => onToggle()}
+        className={clsx(
+          "fixed top-0 left-0 h-full bg-slate-100 border-r transition-all duration-500 ease-in-out",
+          expanded ? "w-[280px]" : "w-[80px]",
+          "hidden lg:flex flex-col justify-between"
+        )}
+      >
+        <Button variant="ghost" className="w-full mt-6 px-5">
+          <Logo expanded={expanded} />
+        </Button>
+
+        <div>
+          {menuList.map((option, index) => (
+            <MenuButton
+              key={index}
+              {...option}
+              currentPath={currentPath}
+              expanded={expanded}
+            />
+          ))}
+        </div>
+        <div className="mb-6">
+          <MenuButton
+            icon={<LogOut className="w-7 h-7" />}
+            currentPath={currentPath}
+            expanded={expanded} link="/" text="Logout" />
+        </div>
+      </div>
+
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
+          <div className="fixed top-0 left-0 h-full w-[300px] bg-slate-100 p-4">
+            <Button
+              variant="ghost"
+              className="w-full mt-6 px-5"
+              onClick={() => setMobileOpen(false)}
+            >
+              <Logo expanded={true} />
+            </Button>
+
+            <div className="">
+              {menuList.map((option, index) => (
+                <MenuButton
+                  key={index}
+                  {...option}
+                  currentPath={currentPath}
+                  expanded={true}
+                />
+              ))}
+            </div>
+
+
+
+            <Button variant="ghost" className="mt-6 mb-4">
+              <LogOut className="w-7 h-7" />
+              <span className="ml-2">Logout</span>
+            </Button>
+
+            <div className="mb-20"></div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

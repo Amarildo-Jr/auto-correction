@@ -1,24 +1,31 @@
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { CheckCircle } from 'lucide-react';
 
 interface LogoProps {
   dark?: boolean;
   asChild?: boolean;
+  expanded: boolean;
 }
 
 function Logo({
   className,
+  expanded,
   ...props
 }: LogoProps & React.ComponentProps<"img">) {
   return (
-    <Image
-      src={props.dark ? "/logo-black.svg" : "/logo-white.svg"}
-      width={500}
-      height={500}
-      alt="Logo - Check Quest"
-      className={cn("w-20 h-20", className)}
-    />
+    <span className={cn("flex items-center justify-center gap-2 transition-all duration-300 ease-in-out text-slate-800", className, {
+      "w-16 h-16": !expanded, // tamanho reduzido na versão não expandida
+      "w-full h-full": expanded, // tamanho normal quando expandida
+    })}>
+      <CheckCircle className="w-12 h-12" />
+      {expanded && (
+        <span className="text-4xl font-bold font-mono">
+          ProvEx
+        </span>
+      )}
+    </span>
   );
 }
 
 export { Logo };
+

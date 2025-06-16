@@ -1,11 +1,12 @@
 "use client";
 
+import { ProgressBar } from "@/components/ProgressBar";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AnswerQuestion } from "./AnswerQuestion";
 import { PaginationBar } from "./PaginationBar";
 import { Timer } from "./Timer";
-import { Button } from "./ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 
 interface AnsweredQuestion {
   id: number;
@@ -36,7 +37,6 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
   const [currentQuestion, setCurrentQuestion] = useState(1);
 
   const changeCurrentQuestion = (question: number) => {
-    // Save the current answer before changing the question
     const currentAnswer = answers.find(
       (answer) => answer.id === currentQuestion
     );
@@ -48,7 +48,6 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
         return updatedAnswers;
       });
     }
-
     setCurrentQuestion(question);
   };
 
@@ -78,36 +77,63 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
   return (
     <div className="flex flex-col justify-between min-h-screen">
       <div className="p-4 w-full">
-        <h1 className="text-4xl text-blue-800">Exam Name</h1>
-        <Timer expiryTimestamp={time} />
-        {props.questions.map((question, index) => (
-          <div
-            key={index}
-            className={currentQuestion === question.id ? "" : "hidden"}
-          >
-            <AnswerQuestion
-              id={question.id}
-              question={question.question}
-              objective={question.objective}
-              alternatives={question.alternatives}
-              selectedAnswer={selectedAnswer}
-            />
+        <div className="flex justify-between items-center">
+          <h1 className="text-4xl font-semibold text-sky-800">Prova 1 - Introdução à Programação</h1>
+          <div className="flex gap-x-4">
+            <Timer expiryTimestamp={time} />
+            <AlertDialog>
+              <AlertDialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 bg-sky-800 text-white shadow hover:bg-sky-500 px-6 py-2">
+                Finalizar Prova
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar finalização</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Você não poderá retornar à prova após finalizá-la. Tem
+                    certeza de que deseja continuar?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      router.push("/finish-exam");
+                      console.log(answers);
+                    }}
+                  >
+                    Finalizar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-        ))}
-      </div>
-      <div className="w-full mb-14">
-        <div className="flex justify-end">
-          <Button
-            className="mr-8 px-8"
-            onClick={() => {
-              router.push("/finish-exam");
-              console.log(answers);
-            }}
-            variant="default"
-          >
-            Finalizar
-          </Button>
         </div>
+
+        <ProgressBar
+          current={currentQuestion}
+          total={props.questions.length}
+          className="mt-4"
+        />
+
+        <div className="mt-8">
+          {props.questions.map?.((question, index) => (
+            <div
+              key={index}
+              className={`transition-opacity duration-300 ${currentQuestion === question.id ? "opacity-100" : "hidden"
+                }`}
+            >
+              <AnswerQuestion
+                id={question.id}
+                question={question.question}
+                objective={question.objective}
+                alternatives={question.alternatives}
+                selectedAnswer={selectedAnswer}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="w-full mb-10">
         <PaginationBar
           current={currentQuestion}
           onChange={changeCurrentQuestion}
@@ -119,3 +145,4 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
 };
 
 export { ExamPage };
+
