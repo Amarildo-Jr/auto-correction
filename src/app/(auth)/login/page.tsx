@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppContext } from '@/contexts/AppContext';
 import { userService } from '@/services/api';
-import { Copy } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -15,7 +15,6 @@ export default function LoginPage() {
   const { login, isAuthenticated, isLoading, user } = useAppContext();
   const [activeTab, setActiveTab] = useState('login');
   const [error, setError] = useState('');
-  const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
   // Login states
   const [loginEmail, setLoginEmail] = useState('');
@@ -28,31 +27,23 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'professor' | 'student'>('student');
 
-  const copyToClipboard = async (text: string, type: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopySuccess(type);
-      setTimeout(() => setCopySuccess(null), 2000);
-    } catch (err) {
-      console.error('Erro ao copiar:', err);
-    }
-  };
-
-  // Redirecionar se já estiver autenticado
   useEffect(() => {
-    if (isAuthenticated && !isLoading && user) {
+    if (!isLoading && isAuthenticated && user) {
+      // Redirecionar baseado no papel do usuário
       switch (user.role) {
         case 'admin':
           router.push('/admin/dashboard');
           break;
         case 'professor':
+        case 'teacher':
           router.push('/teacher/dashboard');
           break;
         case 'student':
           router.push('/student/dashboard');
           break;
         default:
-          router.push('/dashboard');
+          router.push('/');
+          break;
       }
     }
   }, [isAuthenticated, isLoading, user, router]);
@@ -63,26 +54,11 @@ export default function LoginPage() {
 
     try {
       const result = await login(loginEmail, loginPassword);
-      if (result.success && result.user) {
-        // Redirecionar baseado no tipo de usuário
-        switch (result.user.role) {
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          case 'professor':
-            router.push('/teacher/dashboard');
-            break;
-          case 'student':
-            router.push('/student/dashboard');
-            break;
-          default:
-            router.push('/dashboard');
-        }
-      } else {
+      if (!result.success) {
         setError(result.error || 'Erro ao fazer login');
       }
     } catch (err) {
-      setError('Erro inesperado ao fazer login');
+      setError('Erro de conexão. Tente novamente.');
     }
   };
 
@@ -101,34 +77,16 @@ export default function LoginPage() {
     }
 
     try {
-      const result = await userService.create({
+      await userService.create({
         name,
         email: registerEmail,
         password: registerPassword,
-        role: userRole
+        role: userRole,
       });
 
-      if (result) {
-        // Após criar a conta, fazer login automaticamente
-        const loginResult = await login(registerEmail, registerPassword);
-        if (loginResult.success && loginResult.user) {
-          switch (loginResult.user.role) {
-            case 'admin':
-              router.push('/admin/dashboard');
-              break;
-            case 'professor':
-              router.push('/teacher/dashboard');
-              break;
-            case 'student':
-              router.push('/student/dashboard');
-              break;
-            default:
-              router.push('/dashboard');
-          }
-        } else {
-          setError('Conta criada com sucesso! Faça login para continuar.');
-          setActiveTab('login');
-        }
+      const loginResult = await login(registerEmail, registerPassword);
+      if (!loginResult.success) {
+        setError(loginResult.error || 'Erro ao fazer login após registro');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao criar conta');
@@ -137,199 +95,162 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">Carregando...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p>Carregando...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-[400px]">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
-            Sistema de Provas Online
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Registro</TabsTrigger>
-            </TabsList>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">AutoCorrection</h1>
+          </div>
+          <p className="text-gray-600">Sistema Inteligente de Avaliação Online</p>
+        </div>
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    placeholder="Senha"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
+        <Card className="shadow-xl border-0">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-2xl font-bold text-center text-gray-900">
+              Acesse sua conta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="register">Criar conta</TabsTrigger>
+              </TabsList>
 
-                {/* Credenciais de teste */}
-                <div className="text-xs text-gray-500 bg-gray-100 p-4 rounded space-y-3">
-                  <strong>Credenciais de teste:</strong>
-
-                  {/* Admin */}
-                  <div className="space-y-1">
-                    <p className="font-medium">Administrador:</p>
-                    <div className="flex items-center gap-2">
-                      <span>admin@admin.com</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => copyToClipboard('admin@admin.com', 'admin-email')}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>admin123</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => copyToClipboard('admin123', 'admin-password')}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
+              <TabsContent value="login" className="space-y-4 mt-6">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      placeholder="Digite seu email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      placeholder="Digite sua senha"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="h-11"
+                    />
                   </div>
 
-                  {/* Professor */}
-                  <div className="space-y-1">
-                    <p className="font-medium">Professor:</p>
-                    <div className="flex items-center gap-2">
-                      <span>prof1@exemplo.com</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => copyToClipboard('prof1@exemplo.com', 'prof-email')}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                      {error}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span>123456</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => copyToClipboard('123456', 'prof-password')}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
+                  )}
+
+                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                    Entrar
+                  </Button>
+                </form>
+
+                <div className="text-center">
+                  <Button variant="link" className="text-sm text-gray-600">
+                    Esqueceu sua senha?
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="register" className="space-y-4 mt-6">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Nome completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      placeholder="Email institucional"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      placeholder="Senha (mínimo 6 caracteres)"
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      placeholder="Confirmar senha"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <select
+                      className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={userRole}
+                      onChange={(e) => setUserRole(e.target.value as 'admin' | 'professor' | 'student')}
+                    >
+                      <option value="student">Estudante</option>
+                      <option value="professor">Professor</option>
+                      <option value="admin">Administrador</option>
+                    </select>
                   </div>
 
-                  {/* Aluno */}
-                  <div className="space-y-1">
-                    <p className="font-medium">Aluno:</p>
-                    <div className="flex items-center gap-2">
-                      <span>aluno1@exemplo.com</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => copyToClipboard('aluno1@exemplo.com', 'student-email')}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                      {error}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span>123456</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => copyToClipboard('123456', 'student-password')}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                  )}
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full">
-                  Entrar
-                </Button>
-              </form>
-            </TabsContent>
+                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                    Criar conta
+                  </Button>
+                </form>
 
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Nome completo"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
+                <div className="text-xs text-gray-500 text-center bg-gray-50 p-3 rounded-md">
+                  Ao criar uma conta, você concorda com nossos termos de uso e política de privacidade.
                 </div>
-                <div className="space-y-2">
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    placeholder="Senha (mín. 6 caracteres)"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    placeholder="Confirmar senha"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <select
-                    className="w-full rounded-md border border-input bg-background px-3 py-2"
-                    value={userRole}
-                    onChange={(e) => setUserRole(e.target.value as 'admin' | 'professor' | 'student')}
-                  >
-                    <option value="student">Aluno</option>
-                    <option value="professor">Professor</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full">
-                  Criar conta
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="text-center mt-6">
+          <Button variant="link" onClick={() => router.push('/')} className="text-gray-600">
+            ← Voltar à página inicial
+          </Button>
+        </div>
+      </div>
     </div>
   );
 } 
