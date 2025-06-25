@@ -24,6 +24,8 @@ export default function NewQuestionPage() {
     difficulty: 'medium',
     points: 1.0,
     is_public: true,
+    expected_answer: '',
+    auto_correction_enabled: false,
     options: [''],
     correct_answers: [] as number[]
   })
@@ -73,6 +75,8 @@ export default function NewQuestionPage() {
         difficulty: formData.difficulty as 'easy' | 'medium' | 'hard',
         points: formData.points,
         is_public: formData.is_public,
+        expected_answer: formData.type === 'essay' ? formData.expected_answer || undefined : undefined,
+        auto_correction_enabled: formData.type === 'essay' ? formData.auto_correction_enabled : false,
         alternatives: formData.type !== 'essay'
           ? (formData.type === 'true_false'
             ? [
@@ -386,16 +390,60 @@ export default function NewQuestionPage() {
         {formData.type === 'essay' && (
           <Card>
             <CardHeader>
-              <CardTitle>Resposta Esperada ou Critérios de Avaliação</CardTitle>
+              <CardTitle>Configurações de Correção - Questão Dissertativa</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Digite a resposta esperada ou critérios de avaliação..."
-                rows={4}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Esta informação ajudará na correção manual da questão
-              </p>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="expected_answer">Resposta Esperada (Gabarito)</Label>
+                <Textarea
+                  id="expected_answer"
+                  value={formData.expected_answer}
+                  onChange={(e) => setFormData(prev => ({ ...prev, expected_answer: e.target.value }))}
+                  placeholder="Digite a resposta esperada ou critérios de avaliação..."
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Esta resposta será usada como referência para correção manual ou automática
+                </p>
+              </div>
+
+              <div className="border rounded-lg p-4 bg-blue-50">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Switch
+                    id="auto_correction"
+                    checked={formData.auto_correction_enabled}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, auto_correction_enabled: checked }))}
+                  />
+                  <Label htmlFor="auto_correction" className="font-medium">
+                    Habilitar Correção Automática
+                  </Label>
+                </div>
+
+                {formData.auto_correction_enabled && (
+                  <div className="text-sm text-blue-700 bg-blue-100 p-3 rounded border">
+                    <p className="font-medium mb-2">💡 Como funciona a Correção Automática:</p>
+                    <ul className="space-y-1 list-disc list-inside">
+                      <li>Usa inteligência artificial para comparar a resposta do aluno com o gabarito</li>
+                      <li>Calcula uma pontuação baseada na similaridade semântica</li>
+                      <li>A pontuação é proporcional à similaridade encontrada</li>
+                      <li>Você ainda pode revisar e ajustar as correções manualmente</li>
+                    </ul>
+                  </div>
+                )}
+
+                {!formData.auto_correction_enabled && (
+                  <p className="text-sm text-muted-foreground">
+                    A correção será feita apenas manualmente. O gabarito servirá como referência para o professor.
+                  </p>
+                )}
+              </div>
+
+              {formData.auto_correction_enabled && !formData.expected_answer.trim() && (
+                <div className="text-sm text-amber-700 bg-amber-100 p-3 rounded border border-amber-200">
+                  <p className="font-medium">⚠️ Atenção:</p>
+                  <p>Para usar a correção automática, é necessário fornecer uma resposta esperada detalhada.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

@@ -6,6 +6,7 @@ import { useAppContext } from '@/contexts/AppContext'
 import {
   BarChart,
   BookOpen,
+  CheckSquare,
   FileText,
   HelpCircle,
   LayoutDashboard,
@@ -45,6 +46,11 @@ export function TeacherSidebar() {
       title: 'Questões',
       href: '/teacher/questions',
       icon: TextSearch
+    },
+    {
+      title: 'Correção',
+      href: '/teacher/correction-review',
+      icon: CheckSquare
     },
     {
       title: 'Resultados',

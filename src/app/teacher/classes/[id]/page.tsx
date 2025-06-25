@@ -217,7 +217,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
     }
 
     const labels = {
-      'approved': 'Aprovado',
+      'approved': 'Satisfatório',
       'pending': 'Pendente',
       'rejected': 'Rejeitado',
       'draft': 'Rascunho',

@@ -236,7 +236,7 @@ export default function StudentExamsPage() {
                           {/* Simulando resultado - na implementação real viria da API */}
                           <p className="font-medium">85/100</p>
                           <Badge className="bg-green-100 text-green-800">
-                            Aprovado
+                            Excelente
                           </Badge>
                         </div>
                       </TableCell>

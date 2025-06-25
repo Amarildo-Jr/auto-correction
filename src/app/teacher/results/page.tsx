@@ -26,6 +26,7 @@ export default function TeacherResultsPage() {
   const [filteredResults, setFilteredResults] = useState<any[]>([])
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalculateMessage, setRecalculateMessage] = useState('')
+  const [recorrectEssays, setRecorrectEssays] = useState(false)
 
   // Verificar autorização
   useEffect(() => {
@@ -61,33 +62,49 @@ export default function TeacherResultsPage() {
   }
 
   const getStatusColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600 bg-green-50'
-    if (percentage >= 60) return 'text-yellow-600 bg-yellow-50'
-    return 'text-red-600 bg-red-50'
+    if (percentage >= 90) return 'text-green-600 bg-green-50'      // Excelente
+    if (percentage >= 80) return 'text-blue-600 bg-blue-50'       // Muito Bom
+    if (percentage >= 70) return 'text-cyan-600 bg-cyan-50'       // Bom
+    if (percentage >= 60) return 'text-yellow-600 bg-yellow-50'   // Satisfatório
+    if (percentage >= 40) return 'text-orange-600 bg-orange-50'   // Regular
+    return 'text-red-600 bg-red-50'                               // Insuficiente
+  }
+
+  const getStatusBadgeColor = (percentage: number) => {
+    if (percentage >= 90) return 'bg-green-100 text-green-800'    // Excelente
+    if (percentage >= 80) return 'bg-blue-100 text-blue-800'     // Muito Bom
+    if (percentage >= 70) return 'bg-cyan-100 text-cyan-800'     // Bom
+    if (percentage >= 60) return 'bg-yellow-100 text-yellow-800' // Satisfatório
+    if (percentage >= 40) return 'bg-orange-100 text-orange-800' // Regular
+    return 'bg-red-100 text-red-800'                             // Insuficiente
   }
 
   const getStatusText = (percentage: number) => {
-    if (percentage >= 60) return 'Aprovado'
-    return 'Reprovado'
+    if (percentage >= 90) return 'Excelente'
+    if (percentage >= 80) return 'Muito Bom'
+    if (percentage >= 70) return 'Bom'
+    if (percentage >= 60) return 'Satisfatório'
+    if (percentage >= 40) return 'Regular'
+    return 'Insuficiente'
   }
 
   const calculateStats = () => {
-    if (filteredResults.length === 0) return { average: 0, highest: 0, lowest: 0, passRate: 0 }
+    if (filteredResults.length === 0) return { average: 0, highest: 0, lowest: 0, satisfactoryRate: 0 }
 
     const scores = filteredResults.map(r => r.percentage)
     const average = scores.reduce((a, b) => a + b, 0) / scores.length
     const highest = Math.max(...scores)
     const lowest = Math.min(...scores)
-    const passRate = (filteredResults.filter(r => r.percentage >= 60).length / filteredResults.length) * 100
+    const satisfactoryRate = (filteredResults.filter(r => r.percentage >= 60).length / filteredResults.length) * 100
 
-    return { average, highest, lowest, passRate }
+    return { average, highest, lowest, satisfactoryRate }
   }
 
   const handleRecalculateExam = async (examId: number) => {
     setIsRecalculating(true)
     setRecalculateMessage('')
 
-    const result = await recalculateResults(examId)
+    const result = await recalculateResults(examId, undefined, recorrectEssays)
 
     if (result.success) {
       setRecalculateMessage(`✅ ${result.message}`)
@@ -177,8 +194,8 @@ export default function TeacherResultsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Taxa de Aprovação</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.passRate.toFixed(1)}%</p>
+                <p className="text-sm font-medium text-muted-foreground">Desempenho Satisfatório</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.satisfactoryRate.toFixed(1)}%</p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-600" />
             </div>
@@ -249,6 +266,18 @@ export default function TeacherResultsPage() {
               <RefreshCw className={`w-4 h-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
+            {selectedExam && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRecalculateExam(parseInt(selectedExam))}
+                disabled={isRecalculating}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                <Calculator className={`w-4 h-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
+                Recalcular Prova
+              </Button>
+            )}
             <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Exportar
@@ -300,8 +329,7 @@ export default function TeacherResultsPage() {
                         </span>
                       </td>
                       <td className="p-4 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${result.percentage >= 60 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(result.percentage)}`}>
                           {getStatusText(result.percentage)}
                         </span>
                       </td>
@@ -348,22 +376,45 @@ export default function TeacherResultsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Recalcular todas as notas da prova selecionada usando a lógica de correção atual.
               </p>
-              <Button
-                onClick={() => handleRecalculateExam(parseInt(selectedExam))}
-                disabled={isRecalculating}
-                className="ml-auto"
-              >
-                {isRecalculating ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="recorrect-essays"
+                  checked={recorrectEssays}
+                  onChange={(e) => setRecorrectEssays(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <label htmlFor="recorrect-essays" className="text-sm font-medium">
+                  Recorrigir questões dissertativas automaticamente
+                </label>
+              </div>
+
+              <div className="text-xs text-muted-foreground">
+                {recorrectEssays ? (
+                  "⚠️ Questões dissertativas com resposta esperada serão recorrigidas automaticamente, sobrescrevendo correções manuais existentes."
                 ) : (
-                  <Calculator className="w-4 h-4 mr-2" />
+                  "✓ Questões dissertativas manterão suas correções manuais existentes."
                 )}
-                Recalcular Prova
-              </Button>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => handleRecalculateExam(parseInt(selectedExam))}
+                  disabled={isRecalculating}
+                >
+                  {isRecalculating ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Calculator className="w-4 h-4 mr-2" />
+                  )}
+                  Recalcular Prova
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -27,7 +27,7 @@ export default function AdminDashboard() {
       color: 'text-yellow-500'
     },
     {
-      title: 'Taxa de Aprovação',
+      title: 'Desempenho Satisfatório',
       value: '78%',
       icon: BarChart,
       color: 'text-purple-500'

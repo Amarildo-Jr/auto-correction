@@ -494,8 +494,11 @@ export default function StudentExams() {
                                     : 'bg-red-100 text-red-800'
                               }
                             >
-                              {exam.result.percentage >= 70 ? 'Aprovado' :
-                                exam.result.percentage >= 50 ? 'Regular' : 'Reprovado'}
+                              {exam.result.percentage >= 90 ? 'Excelente' :
+                                exam.result.percentage >= 80 ? 'Muito Bom' :
+                                  exam.result.percentage >= 70 ? 'Bom' :
+                                    exam.result.percentage >= 60 ? 'Satisfatório' :
+                                      exam.result.percentage >= 40 ? 'Regular' : 'Insuficiente'}
                             </Badge>
                           </div>
                         )}

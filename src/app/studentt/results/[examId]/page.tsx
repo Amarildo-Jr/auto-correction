@@ -15,13 +15,28 @@ export default function Component() {
   const totalQuestions = 50;
   const averageTimePerQuestion = "12 min";
   const difficulty = "Médio";
-  const passingScore = 70;
-  const performance = score >= passingScore ? "Aprovado" : "Reprovado";
+  const satisfactoryScore = 60;
+  const getPerformance = (percentage: number) => {
+    if (percentage >= 90) return 'Excelente'
+    if (percentage >= 80) return 'Muito Bom'
+    if (percentage >= 70) return 'Bom'
+    if (percentage >= 60) return 'Satisfatório'
+    if (percentage >= 40) return 'Regular'
+    return 'Insuficiente'
+  }
 
-  const performanceStyle =
-    score >= passingScore
-      ? "bg-green-600 bg-opacity-20 text-green-600"
-      : "bg-red-600 bg-opacity-20 text-red-600";
+  const performance = getPerformance(score);
+
+  const getPerformanceStyle = (percentage: number) => {
+    if (percentage >= 90) return "bg-green-600 bg-opacity-20 text-green-600"
+    if (percentage >= 80) return "bg-blue-600 bg-opacity-20 text-blue-600"
+    if (percentage >= 70) return "bg-cyan-600 bg-opacity-20 text-cyan-600"
+    if (percentage >= 60) return "bg-yellow-600 bg-opacity-20 text-yellow-600"
+    if (percentage >= 40) return "bg-orange-600 bg-opacity-20 text-orange-600"
+    return "bg-red-600 bg-opacity-20 text-red-600"
+  }
+
+  const performanceStyle = getPerformanceStyle(score);
 
   const accuracy = ((correctAnswers / totalQuestions) * 100).toFixed(2);
 

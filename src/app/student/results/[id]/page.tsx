@@ -120,12 +120,16 @@ export default function StudentResultPage({ params }: { params: { id: string } }
   const getPerformanceBadge = (percentage: number) => {
     if (percentage >= 90) {
       return { label: 'Excelente', color: 'bg-green-100 text-green-800', icon: Trophy }
+    } else if (percentage >= 80) {
+      return { label: 'Muito Bom', color: 'bg-blue-100 text-blue-800', icon: CheckCircle }
     } else if (percentage >= 70) {
-      return { label: 'Aprovado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle }
-    } else if (percentage >= 50) {
-      return { label: 'Regular', color: 'bg-yellow-100 text-yellow-800', icon: Clock }
+      return { label: 'Bom', color: 'bg-cyan-100 text-cyan-800', icon: CheckCircle }
+    } else if (percentage >= 60) {
+      return { label: 'Satisfatório', color: 'bg-yellow-100 text-yellow-800', icon: CheckCircle }
+    } else if (percentage >= 40) {
+      return { label: 'Regular', color: 'bg-orange-100 text-orange-800', icon: Clock }
     } else {
-      return { label: 'Reprovado', color: 'bg-red-100 text-red-800', icon: XCircle }
+      return { label: 'Insuficiente', color: 'bg-red-100 text-red-800', icon: XCircle }
     }
   }
 

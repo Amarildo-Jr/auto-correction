@@ -51,7 +51,7 @@ export default function StudentResults() {
     ? Math.max(...filteredResults.map(result => result.percentage))
     : 0
 
-  const passedExams = filteredResults.filter(result => result.percentage >= 70).length
+  const goodPerformanceExams = filteredResults.filter(result => result.percentage >= 70).length
 
   // Obter lista única de turmas dos resultados
   const uniqueClasses = Array.from(
@@ -78,8 +78,12 @@ export default function StudentResults() {
   }
 
   const getGradeStatus = (percentage: number) => {
-    if (percentage >= 70) return { label: 'Aprovado', color: 'bg-green-100 text-green-800' }
-    return { label: 'Reprovado', color: 'bg-red-100 text-red-800' }
+    if (percentage >= 90) return { label: 'Excelente', color: 'bg-green-100 text-green-800' }
+    if (percentage >= 80) return { label: 'Muito Bom', color: 'bg-blue-100 text-blue-800' }
+    if (percentage >= 70) return { label: 'Bom', color: 'bg-cyan-100 text-cyan-800' }
+    if (percentage >= 60) return { label: 'Satisfatório', color: 'bg-yellow-100 text-yellow-800' }
+    if (percentage >= 40) return { label: 'Regular', color: 'bg-orange-100 text-orange-800' }
+    return { label: 'Insuficiente', color: 'bg-red-100 text-red-800' }
   }
 
   return (
@@ -121,8 +125,8 @@ export default function StudentResults() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Aprovações</p>
-                <p className="text-2xl font-bold">{passedExams}</p>
+                <p className="text-sm font-medium text-muted-foreground">Bom Desempenho</p>
+                <p className="text-2xl font-bold">{goodPerformanceExams}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
             </div>

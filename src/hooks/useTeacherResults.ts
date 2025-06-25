@@ -57,7 +57,7 @@ export function useTeacherResults() {
     }
   }
 
-  const recalculateResults = async (examId?: number, studentId?: number) => {
+  const recalculateResults = async (examId?: number, studentId?: number, recorrectEssays: boolean = false) => {
     const token = getToken()
     if (!token) return { success: false, message: 'Token não encontrado' }
 
@@ -65,6 +65,7 @@ export function useTeacherResults() {
       const body: any = {}
       if (examId) body.exam_id = examId
       if (studentId) body.student_id = studentId
+      body.recorrect_essays = recorrectEssays
 
       const response = await fetch('http://localhost:5000/api/teacher/results/recalculate', {
         method: 'POST',
