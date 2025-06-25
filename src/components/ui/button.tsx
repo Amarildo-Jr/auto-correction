@@ -49,14 +49,22 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     const router = useRouter();
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (props.onClick) {
+        props.onClick(e);
+      }
+      if (props.url && typeof window !== 'undefined') {
+        router.push(props.url);
+      }
+    };
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
-        {...(props.url && {
-          onClick: () => props.url && router.push(props.url),
-        })}
+        onClick={props.url ? handleClick : props.onClick}
       />
     );
   }
@@ -64,3 +72,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = "Button";
 
 export { Button, buttonVariants };
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -242,7 +242,7 @@ export const useClass = (classId: number) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await classService.getById(classId);
+      const data = await apiRequest(`/classes/${classId}`);
       setClassData(data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao carregar turma');
@@ -255,7 +255,7 @@ export const useClass = (classId: number) => {
     if (!classId) return;
     
     try {
-      const data = await classService.getStudents(classId);
+      const data = await apiRequest(`/classes/${classId}/students`);
       setStudents(data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao carregar estudantes');

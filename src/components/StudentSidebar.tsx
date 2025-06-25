@@ -1,9 +1,9 @@
-import { useHover } from "@uidotdev/usehooks";
+import { useHover } from "@/hooks/useHover";
 import clsx from "clsx";
 import { GraduationCap, HelpCircle, Home, ListChecks, LogOut, Menu, UserRound } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "./Logo";
-import { Avatar } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
 interface MenuButtonProps {
@@ -21,7 +21,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
   currentPath,
   expanded,
 }) => {
-  const [ref, hovering] = useHover();
+  const [ref, hovering] = useHover<HTMLButtonElement>();
 
   const isActive = currentPath === link;
   const textColor = isActive
@@ -166,7 +166,10 @@ export function StudentSidebar({ currentPath, expanded, onToggle, userName, user
             </div>
 
             <div className="flex flex-col items-center mt-6">
-              <Avatar src={userAvatar} alt="User Avatar" />
+              <Avatar>
+                <AvatarImage src={userAvatar} />
+                <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
               <span className="mt-2 text-gray-900">{userName}</span>
             </div>
 

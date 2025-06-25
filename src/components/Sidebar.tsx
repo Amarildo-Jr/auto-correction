@@ -1,5 +1,5 @@
 // components/Sidebar.tsx
-import { useHover } from "@uidotdev/usehooks";
+import { useHover } from "@/hooks/useHover";
 import clsx from "clsx";
 import { BookUser, HelpCircle, Home, ListChecks, LogOut, Menu, UserRound } from "lucide-react";
 import { useState } from "react";
@@ -21,7 +21,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
   currentPath,
   expanded,
 }) => {
-  const [ref, hovering] = useHover();
+  const [ref, hovering] = useHover<HTMLButtonElement>();
 
   const isActive = currentPath === link;
   const textColor = isActive

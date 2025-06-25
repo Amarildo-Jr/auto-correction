@@ -235,7 +235,7 @@ export default function ViewExamPage({ params }: { params: { id: string } }) {
                 <p className="text-sm font-medium text-gray-600">Questões</p>
                 <div className="flex items-center gap-1 mt-1">
                   <FileText className="w-4 h-4 text-gray-500" />
-                  <span>{exam.questions?.length || 0} questões</span>
+                  <span>{result?.questions_count || 0} questões</span>
                 </div>
               </div>
 
@@ -292,44 +292,7 @@ export default function ViewExamPage({ params }: { params: { id: string } }) {
             </CardContent>
           </Card>
 
-          {/* Questões (Preview) - Só mostra após prova concluída */}
-          {exam.questions && exam.questions.length > 0 && result && result.status === 'completed' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Questões da Prova</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {exam.questions.map((question: any, index: number) => (
-                    <div key={question.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium">
-                          Questão {index + 1}
-                        </h4>
-                        <Badge variant="outline">
-                          {question.points} {question.points === 1 ? 'ponto' : 'pontos'}
-                        </Badge>
-                      </div>
-                      <p className="text-gray-700 text-sm mb-2">
-                        {question.question_text.length > 100
-                          ? `${question.question_text.substring(0, 100)}...`
-                          : question.question_text
-                        }
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>Tipo: {question.question_type === 'single_choice' ? 'Escolha Única' :
-                          question.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
-                            question.question_type === 'true_false' ? 'Verdadeiro/Falso' : 'Dissertativa'}</span>
-                        {question.alternatives && (
-                          <span>• {question.alternatives.length} alternativas</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Preview de questões removido - não disponível na API atual */}
         </div>
 
         {/* Resultado/Status */}

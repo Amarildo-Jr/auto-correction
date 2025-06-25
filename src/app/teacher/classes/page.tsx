@@ -1,5 +1,8 @@
-'use client'
+"use client"
 
+export const dynamic = 'force-dynamic'
+
+import ClientOnly from "@/components/ClientOnly"
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +39,14 @@ interface EnrollmentRequest {
 }
 
 export default function TeacherClassesPage() {
+  return (
+    <ClientOnly fallback={<LoadingSpinner />}>
+      <TeacherClassesContent />
+    </ClientOnly>
+  )
+}
+
+function TeacherClassesContent() {
   const { user, isAuthenticated } = useAppContext()
   const router = useRouter()
 

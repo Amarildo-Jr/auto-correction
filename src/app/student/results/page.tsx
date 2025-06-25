@@ -27,7 +27,11 @@ export default function StudentResults() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Erro ao carregar resultados</h1>
           <p className="text-gray-600">{error}</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
+          <Button onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
+          }} className="mt-4">
             Tentar novamente
           </Button>
         </div>

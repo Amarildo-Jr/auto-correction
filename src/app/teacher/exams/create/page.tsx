@@ -1,5 +1,8 @@
-'use client'
+"use client"
 
+export const dynamic = 'force-dynamic'
+
+import ClientOnly from "@/components/ClientOnly"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +20,14 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function CreateExamPage() {
+  return (
+    <ClientOnly fallback={<LoadingSpinner />}>
+      <CreateExamContent />
+    </ClientOnly>
+  )
+}
+
+function CreateExamContent() {
   const { user, isAuthenticated } = useAppContext()
   const { createExam } = useExams()
   const { classes, isLoading: classesLoading } = useClasses()

@@ -13,6 +13,8 @@ export default function NewExamPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +22,9 @@ export default function NewExamPage() {
       await examService.create({
         title,
         description,
-        duration: parseInt(duration)
+        duration_minutes: parseInt(duration),
+        start_time: startTime,
+        end_time: endTime
       });
       router.push('/admin/exams');
     } catch (error) {
@@ -56,6 +60,22 @@ export default function NewExamPage() {
                 placeholder="Duração (minutos)"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
+              />
+            </div>
+            <div>
+              <Input
+                type="datetime-local"
+                placeholder="Data/Hora de Início"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </div>
+            <div>
+              <Input
+                type="datetime-local"
+                placeholder="Data/Hora de Término"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
               />
             </div>
             <Button type="submit">Criar Prova</Button>

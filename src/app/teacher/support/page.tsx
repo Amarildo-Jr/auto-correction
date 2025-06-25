@@ -92,7 +92,7 @@ export default function TeacherSupport() {
               Como criar uma nova prova?
             </h3>
             <p className="text-sm text-gray-600">
-              Para criar uma nova prova, acesse a seção "Provas" e clique no botão "Nova Prova".
+              Para criar uma nova prova, acesse a seção &quot;Provas&quot; e clique no botão &quot;Nova Prova&quot;.
               Siga o assistente para configurar as questões e parâmetros da prova.
             </p>
           </div>
@@ -101,7 +101,7 @@ export default function TeacherSupport() {
               Como visualizar os resultados dos alunos?
             </h3>
             <p className="text-sm text-gray-600">
-              Na seção "Resultados", você encontrará todas as provas aplicadas e poderá
+              Na seção &quot;Resultados&quot;, você encontrará todas as provas aplicadas e poderá
               visualizar as notas individuais e estatísticas gerais.
             </p>
           </div>
@@ -110,7 +110,7 @@ export default function TeacherSupport() {
               Como gerenciar minhas turmas?
             </h3>
             <p className="text-sm text-gray-600">
-              Acesse a seção "Turmas" para visualizar, criar e gerenciar suas turmas.
+              Acesse a seção &quot;Turmas&quot; para visualizar, criar e gerenciar suas turmas.
               Você pode adicionar alunos, definir horários e acompanhar o progresso.
             </p>
           </div>

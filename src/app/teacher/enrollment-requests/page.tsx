@@ -177,7 +177,11 @@ export default function EnrollmentRequestsPage() {
                   <div className="text-center py-8">
                     <XCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
                     <p className="text-red-600 mb-4">Erro ao carregar solicitações: {error}</p>
-                    <Button onClick={() => window.location.reload()}>
+                    <Button onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.location.reload();
+                      }
+                    }}>
                       Tentar novamente
                     </Button>
                   </div>

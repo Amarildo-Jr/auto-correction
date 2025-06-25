@@ -13,7 +13,7 @@ export default function ExamDetailPage() {
   useEffect(() => {
     const fetchExam = async () => {
       try {
-        const data = await examService.getById(examId as string);
+        const data = await examService.getById(Number(examId));
         setExam(data);
       } catch (error) {
         console.error('Erro ao carregar prova:', error);
@@ -29,5 +29,5 @@ export default function ExamDetailPage() {
     return <div>Carregando...</div>;
   }
 
-  return <ExamPage exam={exam} />;
-} 
+  return <ExamPage questions={exam.questions} duration={exam.duration} />;
+}

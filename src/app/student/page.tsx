@@ -1,5 +1,8 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
+import ClientOnly from "@/components/ClientOnly"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -34,12 +37,18 @@ interface StudentExam {
 }
 
 export default function StudentDashboard() {
+  return (
+    <ClientOnly fallback={<LoadingSpinner />}>
+      <StudentDashboardContent />
+    </ClientOnly>
+  )
+}
+
+function StudentDashboardContent() {
   const { user, isAuthenticated } = useAppContext()
   const { exams, isLoading: examsLoading, error: examsError } = useStudentExams()
   const { classes, isLoading: classesLoading } = useStudentClasses()
   const router = useRouter()
-
-
 
   // Verificar autorização
   if (!isAuthenticated || user?.role !== 'student') {
@@ -63,7 +72,11 @@ export default function StudentDashboard() {
                 <h3 className="font-medium text-red-800">Erro ao carregar provas</h3>
                 <p className="text-red-700 text-sm mt-1">{examsError}</p>
                 <Button
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.location.reload();
+                    }
+                  }}
                   className="mt-3"
                   size="sm"
                 >
@@ -216,8 +229,6 @@ export default function StudentDashboard() {
         <h1 className="text-3xl font-bold mb-2">Bem-vindo, {user?.name}! 👋</h1>
         <p className="text-muted-foreground">Acompanhe suas provas e atividades acadêmicas</p>
       </div>
-
-
 
       {/* Estatísticas rápidas */}
       <div className="grid md:grid-cols-4 gap-4 mb-8">

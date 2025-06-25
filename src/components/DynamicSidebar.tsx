@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppContext } from "@/contexts/AppContext";
-import { useHover } from "@uidotdev/usehooks";
+import { useHover } from "@/hooks/useHover";
 import clsx from "clsx";
 import {
   BarChart3,
@@ -38,7 +38,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
   expanded,
   onClick
 }) => {
-  const [ref, hovering] = useHover();
+  const [ref, hovering] = useHover<HTMLButtonElement>();
   const router = useRouter();
 
   const isActive = currentPath.startsWith(link);
@@ -298,9 +298,7 @@ export function DynamicSidebar({ currentPath, expanded, onToggle }: DynamicSideb
                   expanded={true}
                   onClick={() => {
                     setMobileOpen(false);
-                    if (!option.onClick) {
-                      router.push(option.link);
-                    }
+                    router.push(option.link);
                   }}
                 />
               ))}

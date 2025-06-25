@@ -24,7 +24,11 @@ export default function StudentExamsPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <p className="text-red-600 mb-4">Erro ao carregar provas: {error}</p>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
+          }}>
             Tentar novamente
           </Button>
         </div>

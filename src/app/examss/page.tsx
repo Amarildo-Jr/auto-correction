@@ -38,7 +38,7 @@ export default function ExamsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">{exam.description}</p>
-              <p className="mt-2">Duração: {exam.duration} minutos</p>
+              <p className="mt-2">Duração: {exam.duration_minutes} minutos</p>
             </CardContent>
           </Card>
         ))}

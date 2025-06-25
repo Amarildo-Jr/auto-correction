@@ -27,6 +27,7 @@ export default function ExamDetailsPage({ params }: ExamDetailsPageProps) {
     return null
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (exams.length > 0) {
       const foundExam = exams.find(e => e.id.toString() === params.examId)

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useClasses } from "@/hooks/useClasses"
 import { useExams } from "@/hooks/useExams"
-import { Exam } from "@/types"
+import { Exam } from "@/services/api"
 import { Check, Eye, FilePen, Filter, Plus, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -54,7 +54,8 @@ export default function ExamsPage() {
     })
   }
 
-  const getClassName = (classId: number) => {
+  const getClassName = (classId: number | undefined) => {
+    if (!classId) return 'N/A'
     const classObj = classes.find(c => c.id === classId)
     return classObj ? classObj.name : 'N/A'
   }
@@ -68,7 +69,11 @@ export default function ExamsPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <p className="text-red-600 mb-4">Erro ao carregar provas: {error}</p>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
+          }}>
             Tentar novamente
           </Button>
         </div>
