@@ -2,12 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { authService, examService, testService } from '@/services/api';
 import { useState } from 'react';
 
 export default function TestApiPage() {
   const [results, setResults] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const testEndpoint = async (name: string, testFn: () => Promise<any>) => {
     setIsLoading(true);
@@ -33,13 +36,15 @@ export default function TestApiPage() {
     // Teste 1: Health check
     await testEndpoint('health', testService.healthCheck);
 
-    // Teste 2: Login
-    await testEndpoint('login', () =>
-      authService.login({ email: 'admin@admin.com', password: 'admin123' })
-    );
+    // Teste 2: Login (apenas se credenciais fornecidas)
+    if (email && password) {
+      await testEndpoint('login', () =>
+        authService.login({ email, password })
+      );
 
-    // Teste 3: Listar provas (após login)
-    await testEndpoint('exams', examService.getAll);
+      // Teste 3: Listar provas (após login)
+      await testEndpoint('exams', examService.getAll);
+    }
   };
 
   return (
@@ -50,6 +55,27 @@ export default function TestApiPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Email:</label>
+                <Input
+                  type="email"
+                  placeholder="Digite o email para teste"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Senha:</label>
+                <Input
+                  type="password"
+                  placeholder="Digite a senha para teste"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
             <Button
               onClick={runTests}
               disabled={isLoading}
@@ -57,6 +83,12 @@ export default function TestApiPage() {
             >
               {isLoading ? 'Testando...' : 'Executar Testes'}
             </Button>
+
+            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+              <strong>Nota:</strong> Esta página é apenas para testes de desenvolvimento.
+              O teste de health check sempre será executado. Para testar login e outras funcionalidades,
+              forneça credenciais válidas nos campos acima.
+            </div>
 
             {Object.keys(results).length > 0 && (
               <div className="space-y-4">
