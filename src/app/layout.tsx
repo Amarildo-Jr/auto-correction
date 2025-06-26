@@ -6,8 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sistema de Provas Online",
-  description: "Plataforma para realização de provas online com monitoramento avançado",
+  title: "ProvEx - Sistema de Provas Inteligentes",
+  description: "Plataforma inteligente para criação, aplicação e correção automática de provas acadêmicas",
 };
 
 export default function RootLayout({

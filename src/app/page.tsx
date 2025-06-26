@@ -3,8 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/contexts/AppContext';
-import { BookOpen, Brain, FileText, Monitor, Shield, Users } from 'lucide-react';
-import Link from 'next/link';
+import { BookOpen, Brain, FileText, Monitor, Play, Shield, Sparkles, UserPlus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -58,45 +57,73 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-sm shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">AutoCorrection</h1>
+              <h1 className="text-xl font-bold text-gray-900">ProvEx</h1>
             </div>
-            <Link href="/login">
-              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-                Fazer Login
+            <nav className="hidden md:flex space-x-8">
+              <a href="#recursos" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Recursos
+              </a>
+              <a href="#sobre" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Sobre
+              </a>
+            </nav>
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={() => router.push('/login')}>
+                Entrar
               </Button>
-            </Link>
+              <Button onClick={() => router.push('/register')}>
+                Cadastrar
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Sistema Inteligente de
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent block">
-              Avaliação Online
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Plataforma completa para criação, aplicação e correção automática de avaliações acadêmicas,
-            desenvolvida como Trabalho de Conclusão de Curso para revolucionar o processo avaliativo.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg">
-                Acessar Plataforma
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg" className="px-8 py-3 text-lg border-gray-300">
-              Saiba Mais
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="mb-8">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mb-6">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Sistema Acadêmico Inteligente
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                ProvEx
+              </span>
+              <br />
+              <span className="text-gray-700">Provas Inteligentes</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Plataforma completa para criação, aplicação e correção automática de avaliações acadêmicas,
+              desenvolvida especificamente para instituições de ensino superior.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3"
+              onClick={() => router.push('/login')}
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Começar Agora
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-2 border-gray-300 hover:border-gray-400 px-8 py-3"
+              onClick={() => router.push('/register')}
+            >
+              <UserPlus className="w-5 h-5 mr-2" />
+              Criar Conta
             </Button>
           </div>
         </div>
@@ -106,9 +133,9 @@ export default function HomePage() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Recursos Avançados</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Recursos Implementados</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Tecnologia de ponta para uma experiência de avaliação completa e segura
+              Funcionalidades desenvolvidas para uma experiência de avaliação acadêmica moderna
             </p>
           </div>
 
@@ -120,7 +147,7 @@ export default function HomePage() {
                 </div>
                 <CardTitle>Correção Inteligente</CardTitle>
                 <CardDescription>
-                  Sistema de correção automática com IA para questões objetivas e subjetivas
+                  Sistema de correção automática com IA para questões objetivas e dissertativas
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -132,7 +159,7 @@ export default function HomePage() {
                 </div>
                 <CardTitle>Banco de Questões</CardTitle>
                 <CardDescription>
-                  Repositório inteligente para organização e reutilização de questões
+                  Repositório organizado para criação e reutilização de questões acadêmicas
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -142,9 +169,9 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <Monitor className="w-6 h-6 text-purple-600" />
                 </div>
-                <CardTitle>Monitoramento</CardTitle>
+                <CardTitle>Monitoramento Inteligente</CardTitle>
                 <CardDescription>
-                  Supervisão em tempo real com detecção de comportamentos suspeitos
+                  Sistema completo de detecção de comportamentos suspeitos com notificações em tempo real
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -156,7 +183,7 @@ export default function HomePage() {
                 </div>
                 <CardTitle>Gestão de Turmas</CardTitle>
                 <CardDescription>
-                  Sistema completo para gerenciamento de alunos e professores
+                  Sistema completo para gerenciamento de turmas, alunos e professores
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -166,9 +193,9 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
                   <Shield className="w-6 h-6 text-red-600" />
                 </div>
-                <CardTitle>Segurança Avançada</CardTitle>
+                <CardTitle>Controle de Acesso</CardTitle>
                 <CardDescription>
-                  Proteção contra fraudes com múltiplas camadas de segurança
+                  Sistema de autenticação com diferentes níveis de permissão por usuário
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -180,7 +207,7 @@ export default function HomePage() {
                 </div>
                 <CardTitle>Relatórios Detalhados</CardTitle>
                 <CardDescription>
-                  Analytics completos sobre desempenho e estatísticas de uso
+                  Análises completas de desempenho e estatísticas de resultados
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -216,19 +243,19 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-xl font-bold">AutoCorrection</h3>
+          <div className="flex items-center justify-center mb-8">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center mr-3">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <p className="text-gray-400 mb-4">
-              Sistema Inteligente de Avaliação Online - TCC 2024
-            </p>
-            <p className="text-sm text-gray-500">
-              Desenvolvido para revolucionar o processo educacional através da tecnologia
-            </p>
+            <h3 className="text-xl font-bold">ProvEx</h3>
+          </div>
+          <p className="text-gray-400 mb-4">
+            Sistema inteligente de avaliação online desenvolvido para transformar
+            a experiência educacional através da tecnologia.
+          </p>
+          <div className="text-center text-gray-500 text-sm">
+            <p>© 2024 ProvEx. Desenvolvido como Trabalho de Conclusão de Curso.</p>
+            <p className="mt-2">UFPI - Universidade Federal do Piauí</p>
           </div>
         </div>
       </footer>

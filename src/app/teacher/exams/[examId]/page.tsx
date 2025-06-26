@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAppContext } from "@/contexts/AppContext"
 import { useExams } from "@/hooks/useExams"
-import { ArrowLeft, Calendar, Clock, Edit, FileText, Users } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, Edit, FileText, Shield, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -251,6 +251,14 @@ export default function ExamDetailsPage({ params }: ExamDetailsPageProps) {
                 variant="outline"
               >
                 Ver Resultados
+              </Button>
+              <Button
+                onClick={() => router.push(`/teacher/exams/${exam.id}/monitoring`)}
+                variant="outline"
+                className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Monitoramento
               </Button>
               {canEdit && (
                 <Button

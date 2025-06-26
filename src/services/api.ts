@@ -236,7 +236,57 @@ export const monitoringService = {
   }) {
     const response = await api.post('/api/monitoring/event', eventData);
     return response.data;
-}
+  },
+
+  async getSuspiciousActivities(enrollmentId: number) {
+    const response = await api.get(`/api/monitoring/suspicious-activities/${enrollmentId}`);
+    return response.data;
+  },
+
+  async getDashboardAlerts() {
+    const response = await api.get('/api/monitoring/dashboard-alerts');
+    return response.data;
+  },
+
+  async getExamMonitoringStats(examId: number) {
+    const response = await api.get(`/api/monitoring/exam-stats/${examId}`);
+    return response.data;
+  }
+};
+
+// Serviços de notificações
+export const notificationService = {
+  async getNotifications(userId?: number) {
+    const url = userId ? `/api/notifications?user_id=${userId}` : '/api/notifications';
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  async markAsRead(notificationId: number) {
+    const response = await api.patch(`/api/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  async markAllAsRead() {
+    const response = await api.patch('/api/notifications/mark-all-read');
+    return response.data;
+  },
+
+  async createNotification(notificationData: {
+    user_id: number;
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }) {
+    const response = await api.post('/api/notifications', notificationData);
+    return response.data;
+  },
+
+  async deleteNotification(notificationId: number) {
+    const response = await api.delete(`/api/notifications/${notificationId}`);
+    return response.data;
+  }
 };
 
 // Serviços de turmas
