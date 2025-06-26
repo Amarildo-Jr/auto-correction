@@ -3,10 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppContext } from '@/contexts/AppContext';
-import { userService } from '@/services/api';
-import { BookOpen } from 'lucide-react';
+import { authService } from '@/services/api';
+import { BookOpen, GraduationCap, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -21,11 +23,15 @@ export default function LoginPage() {
   const [loginPassword, setLoginPassword] = useState('');
 
   // Register states
-  const [name, setName] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [userRole, setUserRole] = useState<'admin' | 'professor' | 'student'>('student');
+  const [registerData, setRegisterData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    user_type: 'student' as 'student' | 'teacher'
+  });
+  const [registerErrors, setRegisterErrors] = useState<Record<string, string>>({});
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
@@ -62,34 +68,79 @@ export default function LoginPage() {
     }
   };
 
+  const handleRegisterInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setRegisterData(prev => ({ ...prev, [name]: value }));
+    // Limpar erro do campo quando usuário começar a digitar
+    if (registerErrors[name]) {
+      setRegisterErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleUserTypeChange = (value: string) => {
+    setRegisterData(prev => ({ ...prev, user_type: value as 'student' | 'teacher' }));
+  };
+
+  const validateRegisterForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!registerData.name.trim()) {
+      newErrors.name = 'Nome é obrigatório';
+    }
+
+    if (!registerData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    if (!registerData.password) {
+      newErrors.password = 'Senha é obrigatória';
+    } else if (registerData.password.length < 6) {
+      newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
+    }
+
+    if (!registerData.confirmPassword) {
+      newErrors.confirmPassword = 'Confirmação de senha é obrigatória';
+    } else if (registerData.password !== registerData.confirmPassword) {
+      newErrors.confirmPassword = 'Senhas não coincidem';
+    }
+
+    setRegisterErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (registerPassword !== confirmPassword) {
-      setError('As senhas não coincidem');
+    if (!validateRegisterForm()) {
       return;
     }
 
-    if (registerPassword.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
+    setIsRegistering(true);
 
     try {
-      await userService.create({
-        name,
-        email: registerEmail,
-        password: registerPassword,
-        role: userRole,
+      const { user } = await authService.register({
+        name: registerData.name,
+        email: registerData.email,
+        password: registerData.password,
+        user_type: registerData.user_type
       });
 
-      const loginResult = await login(registerEmail, registerPassword);
-      if (!loginResult.success) {
-        setError(loginResult.error || 'Erro ao fazer login após registro');
+      // Redirecionar baseado no tipo de usuário
+      if (user.role === 'student') {
+        router.push('/student/dashboard');
+      } else if (user.role === 'professor') {
+        router.push('/teacher/dashboard');
+      } else {
+        router.push('/admin/dashboard');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao criar conta');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Erro ao registrar usuário';
+      setError(errorMessage);
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -174,56 +225,90 @@ export default function LoginPage() {
 
               <TabsContent value="register" className="space-y-4 mt-6">
                 <form onSubmit={handleRegister} className="space-y-4">
+                  {/* Seleção de tipo de usuário */}
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                      Tipo de usuário
+                    </Label>
+                    <RadioGroup
+                      value={registerData.user_type}
+                      onValueChange={handleUserTypeChange}
+                      className="grid grid-cols-2 gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="student" id="student" />
+                        <Label htmlFor="student" className="flex items-center gap-2 cursor-pointer">
+                          <GraduationCap className="h-4 w-4 text-blue-600" />
+                          Aluno
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="teacher" id="teacher" />
+                        <Label htmlFor="teacher" className="flex items-center gap-2 cursor-pointer">
+                          <Users className="h-4 w-4 text-green-600" />
+                          Professor
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
                   <div className="space-y-2">
                     <Input
+                      name="name"
                       placeholder="Nome completo"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      value={registerData.name}
+                      onChange={handleRegisterInputChange}
                       required
-                      className="h-11"
+                      className={`h-11 ${registerErrors.name ? 'border-red-500' : ''}`}
                     />
+                    {registerErrors.name && (
+                      <p className="text-sm text-red-600">{registerErrors.name}</p>
+                    )}
                   </div>
+
                   <div className="space-y-2">
                     <Input
+                      name="email"
                       type="email"
-                      placeholder="Email institucional"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      placeholder="Email"
+                      value={registerData.email}
+                      onChange={handleRegisterInputChange}
                       required
-                      className="h-11"
+                      className={`h-11 ${registerErrors.email ? 'border-red-500' : ''}`}
                     />
+                    {registerErrors.email && (
+                      <p className="text-sm text-red-600">{registerErrors.email}</p>
+                    )}
                   </div>
+
                   <div className="space-y-2">
                     <Input
+                      name="password"
                       type="password"
                       placeholder="Senha (mínimo 6 caracteres)"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      value={registerData.password}
+                      onChange={handleRegisterInputChange}
                       required
-                      minLength={6}
-                      className="h-11"
+                      className={`h-11 ${registerErrors.password ? 'border-red-500' : ''}`}
                     />
+                    {registerErrors.password && (
+                      <p className="text-sm text-red-600">{registerErrors.password}</p>
+                    )}
                   </div>
+
                   <div className="space-y-2">
                     <Input
+                      name="confirmPassword"
                       type="password"
                       placeholder="Confirmar senha"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      value={registerData.confirmPassword}
+                      onChange={handleRegisterInputChange}
                       required
-                      className="h-11"
+                      className={`h-11 ${registerErrors.confirmPassword ? 'border-red-500' : ''}`}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <select
-                      className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={userRole}
-                      onChange={(e) => setUserRole(e.target.value as 'admin' | 'professor' | 'student')}
-                    >
-                      <option value="student">Estudante</option>
-                      <option value="professor">Professor</option>
-                      <option value="admin">Administrador</option>
-                    </select>
+                    {registerErrors.confirmPassword && (
+                      <p className="text-sm text-red-600">{registerErrors.confirmPassword}</p>
+                    )}
                   </div>
 
                   {error && (
@@ -232,8 +317,12 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                    Criar conta
+                  <Button
+                    type="submit"
+                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? 'Criando conta...' : 'Criar conta'}
                   </Button>
                 </form>
 

@@ -161,11 +161,11 @@ export const useExamSession = (enrollmentId: number | null) => {
           });
         }
         
-        recordMonitoringEvent('focus_change', {
+      recordMonitoringEvent('focus_change', {
           type: eventType,
           time_away_ms: timeAway,
-          timestamp: new Date().toISOString()
-        });
+        timestamp: new Date().toISOString()
+      });
       }
     };
 
