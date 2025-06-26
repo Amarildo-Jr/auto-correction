@@ -109,6 +109,21 @@ export const authService = {
     return { token, user };
   },
 
+  async register(userData: {
+    name: string;
+    email: string;
+    password: string;
+    user_type: 'student' | 'teacher';
+  }) {
+    const response = await api.post('/api/auth/register', userData);
+    const { token, user } = response.data;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+    return { token, user };
+  },
+
   logout() {
     if (typeof window !== 'undefined') {
     localStorage.removeItem('token');
