@@ -109,13 +109,13 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">AutoCorrection</h1>
+            <h1 className="text-3xl font-bold text-gray-900">ProvEx</h1>
           </div>
-          <p className="text-gray-600">Sistema Inteligente de Avaliação Online</p>
+          <p className="text-gray-600">Sistema Inteligente de Provas</p>
         </div>
 
         <Card className="shadow-xl border-0">

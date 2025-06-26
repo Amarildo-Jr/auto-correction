@@ -1,15 +1,26 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Mail } from 'lucide-react'
+import { BookOpen, Mail } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="max-w-md w-full space-y-8 p-8">
+        {/* Logo */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">ProvEx</h1>
+          </div>
+          <p className="text-gray-600 mb-6">Sistema Inteligente de Provas</p>
+        </div>
+
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="text-center text-2xl font-bold text-gray-900">
             Recuperar senha
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
