@@ -1,15 +1,23 @@
 import axios from 'axios';
+import tokenService from './tokenService';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 });
 
 // Interceptor para adicionar o token em todas as requisições
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      // Tentar obter um token válido (renovando se necessário)
+      const token = await tokenService.getValidAccessToken();
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Erro ao obter token para requisição:', error);
+      // Continuar sem token - a API retornará 401 se necessário
     }
   }
   return config;
@@ -18,21 +26,45 @@ api.interceptors.request.use((config) => {
 // Interceptor para tratar respostas e erros de autenticação
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expirado ou inválido
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Se recebeu 401 e ainda não tentou renovar o token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Tentar renovar o token
+        const newToken = await tokenService.refreshAccessToken();
         
-        // Redirecionar para login se não estiver já na página de login
-        if (!window.location.pathname.includes('/login')) {
+        if (newToken) {
+          // Refazer a requisição original com o novo token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Falha ao renovar token:', refreshError);
+        
+        // Se falhou ao renovar, fazer logout e redirecionar
+        tokenService.clearTokens();
+        
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
+        
+        return Promise.reject(refreshError);
       }
     }
+
+    // Para outros erros 401 ou se a renovação falhou
+    if (error.response?.status === 401) {
+      tokenService.clearTokens();
+      
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -123,16 +155,12 @@ export interface Answer {
 export const authService = {
   async login(credentials: LoginCredentials) {
     const response = await api.post('/api/auth/login', credentials);
-    const { token, user } = response.data;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      // Também armazenar em cookies para o middleware
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
-      document.cookie = `userRole=${user.role}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
-    }
-    return { token, user };
+    const loginData = response.data;
+    
+    // Usar o novo sistema de tokens
+    await tokenService.setTokens(loginData);
+    
+    return { token: loginData.token, user: loginData.user };
   },
 
   async register(userData: {
@@ -142,27 +170,16 @@ export const authService = {
     user_type: 'student' | 'teacher';
   }) {
     const response = await api.post('/api/auth/register', userData);
-    const { token, user } = response.data;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      // Também armazenar em cookies para o middleware
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
-      document.cookie = `userRole=${user.role}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
-    }
-    return { token, user };
+    const loginData = response.data;
+    
+    // Usar o novo sistema de tokens
+    await tokenService.setTokens(loginData);
+    
+    return { token: loginData.token, user: loginData.user };
   },
 
   logout() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      // Remover cookies também
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    }
+    tokenService.clearTokens();
   },
 
   getCurrentUser(): User | null {
@@ -174,6 +191,16 @@ export const authService = {
   async getMe() {
     const response = await api.get('/api/users/me');
     return response.data;
+  },
+
+  // Novo método para renovação manual de token
+  async refreshToken() {
+    return await tokenService.refreshAccessToken();
+  },
+
+  // Verificar se o token é válido
+  isTokenValid(): boolean {
+    return tokenService.hasValidToken();
   }
 };
 
@@ -371,12 +398,14 @@ export const classService = {
   }
 };
 
-// Serviço de teste
-export const testService = {
-  async healthCheck() {
-    const response = await api.get('/api/test');
-    return response.data;
-  }
-}; 
+export const apiRequest = async (url: string, options: RequestInit = {}) => {
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const healthCheck = async () => {
+  const response = await api.get('/api/test');
+  return response.data;
+};
 
 export default api; 

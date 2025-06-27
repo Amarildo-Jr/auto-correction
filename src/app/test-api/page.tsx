@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { authService, examService, testService } from '@/services/api';
+import { authService, examService, healthCheck } from '@/services/api';
 import { useState } from 'react';
 
 export default function TestApiPage() {
@@ -34,7 +34,7 @@ export default function TestApiPage() {
     setResults({});
 
     // Teste 1: Health check
-    await testEndpoint('health', testService.healthCheck);
+    await testEndpoint('health', healthCheck);
 
     // Teste 2: Login (apenas se credenciais fornecidas)
     if (email && password) {

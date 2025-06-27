@@ -1,0 +1,222 @@
+import axios from 'axios';
+
+interface TokenData {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  user: any;
+}
+
+class TokenService {
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+  private expiresAt: number = 0;
+  private refreshPromise: Promise<string> | null = null;
+
+  constructor() {
+    this.loadTokensFromStorage();
+  }
+
+  private loadTokensFromStorage() {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      const expiresAt = localStorage.getItem('tokenExpiresAt');
+
+      if (accessToken && refreshToken && expiresAt) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.expiresAt = parseInt(expiresAt);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar tokens do storage:', error);
+      this.clearTokens();
+    }
+  }
+
+  private saveTokensToStorage(tokenData: TokenData) {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem('accessToken', tokenData.accessToken);
+      localStorage.setItem('refreshToken', tokenData.refreshToken);
+      localStorage.setItem('tokenExpiresAt', tokenData.expiresAt.toString());
+      localStorage.setItem('user', JSON.stringify(tokenData.user));
+
+      // Também salvar em cookies para o middleware
+      const expiryDate = new Date(tokenData.expiresAt);
+      const cookieOptions = `path=/; expires=${expiryDate.toUTCString()}; secure; samesite=strict`;
+      
+      document.cookie = `token=${tokenData.accessToken}; ${cookieOptions}`;
+      document.cookie = `userRole=${tokenData.user.role}; ${cookieOptions}`;
+      document.cookie = `refreshToken=${tokenData.refreshToken}; ${cookieOptions}`;
+
+      this.accessToken = tokenData.accessToken;
+      this.refreshToken = tokenData.refreshToken;
+      this.expiresAt = tokenData.expiresAt;
+    } catch (error) {
+      console.error('Erro ao salvar tokens no storage:', error);
+    }
+  }
+
+  public clearTokens() {
+    if (typeof window === 'undefined') return;
+
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.expiresAt = 0;
+    this.refreshPromise = null;
+
+    // Limpar localStorage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('tokenExpiresAt');
+    localStorage.removeItem('user');
+    localStorage.removeItem('token'); // Token antigo
+
+    // Limpar cookies
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  }
+
+  public getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
+  public getRefreshToken(): string | null {
+    return this.refreshToken;
+  }
+
+  public isTokenExpired(): boolean {
+    if (!this.accessToken || !this.expiresAt) return true;
+    
+    // Considerar token expirado se restam menos de 5 minutos
+    const bufferTime = 5 * 60 * 1000; // 5 minutos em ms
+    return Date.now() > (this.expiresAt - bufferTime);
+  }
+
+  public hasValidToken(): boolean {
+    return !!this.accessToken && !this.isTokenExpired();
+  }
+
+  public async setTokens(loginResponse: any): Promise<void> {
+    const { token, refresh_token, user, expires_in } = loginResponse;
+    
+    // Calcular tempo de expiração (expires_in em segundos)
+    const expiresAt = Date.now() + (expires_in * 1000);
+
+    const tokenData: TokenData = {
+      accessToken: token,
+      refreshToken: refresh_token,
+      expiresAt,
+      user
+    };
+
+    this.saveTokensToStorage(tokenData);
+  }
+
+  public async refreshAccessToken(): Promise<string> {
+    // Se já há uma promise de refresh em andamento, retornar ela
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    if (!this.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    this.refreshPromise = this.performTokenRefresh();
+    
+    try {
+      const newAccessToken = await this.refreshPromise;
+      return newAccessToken;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async performTokenRefresh(): Promise<string> {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
+        {
+          refresh_token: this.refreshToken
+        }
+      );
+
+      const { token, refresh_token, user, expires_in } = response.data;
+      
+      // Atualizar tokens
+      await this.setTokens({
+        token,
+        refresh_token,
+        user,
+        expires_in
+      });
+
+      return token;
+    } catch (error: any) {
+      console.error('Erro ao renovar token:', error);
+      
+      // Se o refresh token também expirou, limpar tudo
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        this.clearTokens();
+        
+        // Redirecionar para login se estiver no browser
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      }
+      
+      throw error;
+    }
+  }
+
+  public async getValidAccessToken(): Promise<string | null> {
+    // Se o token ainda é válido, retornar ele
+    if (this.hasValidToken()) {
+      return this.accessToken;
+    }
+
+    // Se não há refresh token, não pode renovar
+    if (!this.refreshToken) {
+      return null;
+    }
+
+    try {
+      // Tentar renovar o token
+      const newToken = await this.refreshAccessToken();
+      return newToken;
+    } catch (error) {
+      console.error('Falha ao renovar token:', error);
+      return null;
+    }
+  }
+
+  // Método para verificar se precisa renovar o token em breve
+  public shouldRefreshSoon(): boolean {
+    if (!this.accessToken || !this.expiresAt) return false;
+    
+    // Renovar se restam menos de 10 minutos
+    const refreshThreshold = 10 * 60 * 1000; // 10 minutos em ms
+    return Date.now() > (this.expiresAt - refreshThreshold);
+  }
+
+  // Método para renovar proativamente o token
+  public async refreshIfNeeded(): Promise<void> {
+    if (this.shouldRefreshSoon() && this.refreshToken) {
+      try {
+        await this.refreshAccessToken();
+      } catch (error) {
+        console.error('Erro na renovação proativa do token:', error);
+      }
+    }
+  }
+}
+
+// Instância singleton
+export const tokenService = new TokenService();
+export default tokenService; 

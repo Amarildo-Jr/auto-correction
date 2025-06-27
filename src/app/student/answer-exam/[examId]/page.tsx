@@ -16,7 +16,7 @@ import {
   Send
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 interface AnswerExamPageProps {
   params: {
@@ -44,24 +44,18 @@ interface Answer {
 }
 
 export default function AnswerExamPage({ params }: AnswerExamPageProps) {
-  const { user, isAuthenticated } = useAppContext()
   const { exams, isLoading: examsLoading } = useExams()
+  const { user, isAuthenticated } = useAppContext()
   const router = useRouter()
 
   const [exam, setExam] = useState<any>(null)
   const [questions, setQuestions] = useState<Question[]>([])
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<number, Answer>>({})
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [examStarted, setExamStarted] = useState(false)
   const [enrollmentId, setEnrollmentId] = useState<number | null>(null)
-
-  // Verificar autorização
-  if (!isAuthenticated || (user?.role !== 'student' && user?.role !== 'admin')) {
-    router.push('/login')
-    return null
-  }
 
   // Carregar dados da prova
   useEffect(() => {
@@ -112,6 +106,32 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
     }
   }, [exams, params.examId])
 
+  const handleSubmitExam = useCallback(async () => {
+    if (isSubmitting) return
+
+    setIsSubmitting(true)
+
+    try {
+      // Salvar todas as respostas pendentes
+      for (const answer of Object.values(answers)) {
+        console.log('Enviando resposta:', answer)
+        // await enrollmentService.submitAnswer(enrollmentId, answer)
+      }
+
+      // Finalizar prova
+      console.log('Finalizando prova:', enrollmentId)
+      // await enrollmentService.finish(enrollmentId)
+
+      // Redirecionar para página de finalização
+      router.push('/student/finish-exam')
+    } catch (error) {
+      console.error('Erro ao enviar prova:', error)
+      alert('Erro ao enviar prova. Tente novamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [isSubmitting, answers, enrollmentId, router])
+
   // Timer da prova
   useEffect(() => {
     if (examStarted && timeRemaining > 0) {
@@ -127,7 +147,13 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
 
       return () => clearInterval(timer)
     }
-  }, [examStarted, timeRemaining])
+  }, [examStarted, timeRemaining, handleSubmitExam])
+
+  // Verificar autorização
+  if (!isAuthenticated || (user?.role !== 'student' && user?.role !== 'admin')) {
+    router.push('/login')
+    return null
+  }
 
   if (examsLoading) {
     return <LoadingSpinner />
@@ -184,32 +210,6 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
       // await enrollmentService.submitAnswer(enrollmentId, answer)
     } catch (error) {
       console.error('Erro ao salvar resposta:', error)
-    }
-  }
-
-  const handleSubmitExam = async () => {
-    if (isSubmitting) return
-
-    setIsSubmitting(true)
-
-    try {
-      // Salvar todas as respostas pendentes
-      for (const answer of Object.values(answers)) {
-        console.log('Enviando resposta:', answer)
-        // await enrollmentService.submitAnswer(enrollmentId, answer)
-      }
-
-      // Finalizar prova
-      console.log('Finalizando prova:', enrollmentId)
-      // await enrollmentService.finish(enrollmentId)
-
-      // Redirecionar para página de finalização
-      router.push('/student/finish-exam')
-    } catch (error) {
-      console.error('Erro ao enviar prova:', error)
-      alert('Erro ao enviar prova. Tente novamente.')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 

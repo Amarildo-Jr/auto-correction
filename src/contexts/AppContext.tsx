@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useTokenRefresh } from '@/hooks/useTokenRefresh';
 import React, { createContext, ReactNode, useContext } from 'react';
 
 interface AppContextType {
@@ -10,6 +11,11 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<any>;
   logout: () => void;
   checkAuth: () => void;
+  // Novos métodos para gerenciamento de tokens
+  forceTokenRefresh: () => Promise<boolean>;
+  isTokenValid: () => boolean;
+  getTimeUntilExpiry: () => number;
+  isRefreshingToken: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -28,6 +34,7 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const auth = useAuth();
+  const tokenRefresh = useTokenRefresh();
 
   const value: AppContextType = {
     user: auth.user,
@@ -36,6 +43,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     login: auth.login,
     logout: auth.logout,
     checkAuth: auth.checkAuth,
+    // Novos métodos para gerenciamento de tokens
+    forceTokenRefresh: tokenRefresh.forceRefresh,
+    isTokenValid: tokenRefresh.isTokenValid,
+    getTimeUntilExpiry: tokenRefresh.getTimeUntilExpiry,
+    isRefreshingToken: tokenRefresh.isRefreshing,
   };
 
   return (
