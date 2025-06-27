@@ -86,7 +86,7 @@ export default function ExamsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Provas</h1>
         <Button
-          onClick={() => router.push('/exams/create')}
+          onClick={() => router.push('/admin/exams/new')}
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -147,7 +147,7 @@ export default function ExamsPage() {
           <div className="text-center">
             <p className="text-gray-500 mb-4">Nenhuma prova encontrada</p>
             <Button
-              onClick={() => router.push('/exams/create')}
+              onClick={() => router.push('/admin/exams/new')}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -189,7 +189,7 @@ export default function ExamsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => router.push(`/exams/${exam.id}`)}
+                      onClick={() => router.push(`/admin/exams/${exam.id}`)}
                     >
                       <Eye className="h-4 w-4" />
                       <span className="sr-only">Visualizar</span>
@@ -197,7 +197,7 @@ export default function ExamsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => router.push(`/exams/${exam.id}/edit`)}
+                      onClick={() => router.push(`/admin/exams/${exam.id}/edit`)}
                     >
                       <FilePen className="h-4 w-4" />
                       <span className="sr-only">Editar</span>
@@ -205,7 +205,7 @@ export default function ExamsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => router.push(`/exams/${exam.id}/results`)}
+                      onClick={() => router.push(`/admin/exams/${exam.id}/results`)}
                     >
                       <Check className="h-4 w-4" />
                       <span className="sr-only">Resultados</span>

@@ -155,7 +155,7 @@ export function DynamicSidebar({ currentPath, expanded, onToggle }: DynamicSideb
             text: "Turmas",
           },
           {
-            link: "/professor/reports",
+            link: "/admin/reports",
             icon: <BarChart3 className="w-7 h-7" />,
             text: "Relatórios",
           }
@@ -184,9 +184,9 @@ export function DynamicSidebar({ currentPath, expanded, onToggle }: DynamicSideb
             text: "Resultados",
           },
           {
-            link: "/student/forums",
+            link: "/student/forum",
             icon: <MessageSquare className="w-7 h-7" />,
-            text: "Fóruns",
+            text: "Fórum",
           }
         ];
 

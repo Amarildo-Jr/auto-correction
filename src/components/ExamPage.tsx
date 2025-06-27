@@ -97,7 +97,7 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
-                      router.push("/finish-exam");
+                      router.push("/student/finish-exam");
                       console.log(answers);
                     }}
                   >

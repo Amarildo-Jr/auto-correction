@@ -16,7 +16,7 @@ function Timer({ expiryTimestamp }: { expiryTimestamp: Date }) {
     restart,
   } = useTimer({
     expiryTimestamp,
-    onExpire: () => router.push("/finish-exam"),
+    onExpire: () => router.push("/student/finish-exam"),
   });
 
   return (
