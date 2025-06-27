@@ -1,8 +1,7 @@
 'use client';
 
+import tokenService from '@/services/tokenService';
 import { useEffect, useState } from 'react';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface Question {
   id: number;
@@ -23,10 +22,11 @@ export interface Question {
   type: 'single_choice' | 'multiple_choice' | 'true_false' | 'essay';
   options?: string[];
   correct_answer?: string;
+  is_active: boolean;
 }
 
 export interface Alternative {
-  id: number;
+  id?: number;
   question_id: number;
   alternative_text: string;
   is_correct: boolean;
@@ -35,28 +35,21 @@ export interface Alternative {
   text: string;
 }
 
-const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
+export interface CreateQuestionData {
+  question_text: string;
+  question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'essay';
+  points: number;
+  alternatives?: Omit<Alternative, 'id'>[];
+}
 
-const apiRequest = async (url: string, options: RequestInit = {}) => {
-  const token = getAuthToken();
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = await tokenService.getValidAccessToken();
   
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (token) {
-    defaultHeaders.Authorization = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api${url}`, {
     ...options,
     headers: {
-      ...defaultHeaders,
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
   });
@@ -90,7 +83,7 @@ export const useQuestions = () => {
       setIsLoading(true);
       setError(null);
       
-      const data = await apiRequest('/questions');
+      const data = await makeApiRequest('/questions');
       const normalizedQuestions = data.map(normalizeQuestion);
       setQuestions(normalizedQuestions);
     } catch (err: any) {
@@ -114,7 +107,7 @@ export const useQuestions = () => {
     }>;
   }) => {
     try {
-      const data = await apiRequest('/questions', {
+      const data = await makeApiRequest('/questions', {
         method: 'POST',
         body: JSON.stringify(questionData),
       });
@@ -140,7 +133,7 @@ export const useQuestions = () => {
     }>;
   }) => {
     try {
-      const data = await apiRequest(`/questions/${id}`, {
+      const data = await makeApiRequest(`/questions/${id}`, {
         method: 'PUT',
         body: JSON.stringify(questionData),
       });
@@ -157,7 +150,7 @@ export const useQuestions = () => {
 
   const deleteQuestion = async (id: number) => {
     try {
-      await apiRequest(`/questions/${id}`, {
+      await makeApiRequest(`/questions/${id}`, {
         method: 'DELETE',
       });
       
@@ -169,7 +162,7 @@ export const useQuestions = () => {
 
   const getQuestion = async (id: number): Promise<Question> => {
     try {
-      const data = await apiRequest(`/questions/${id}`);
+      const data = await makeApiRequest(`/questions/${id}`);
       return normalizeQuestion(data);
     } catch (err: any) {
       throw new Error(err.message || 'Erro ao buscar questão');
@@ -178,7 +171,7 @@ export const useQuestions = () => {
 
   const addQuestionsToExam = async (examId: number, questionIds: number[]) => {
     try {
-      const data = await apiRequest(`/exams/${examId}/add-questions`, {
+      const data = await makeApiRequest(`/exams/${examId}/add-questions`, {
         method: 'POST',
         body: JSON.stringify({ question_ids: questionIds }),
       });

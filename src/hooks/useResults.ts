@@ -1,66 +1,62 @@
 'use client'
 
-import { useAuth } from '@/hooks/useAuth'
-import { useCallback, useEffect, useState } from 'react'
+import tokenService from '@/services/tokenService'
+import { useEffect, useState } from 'react'
 
 export interface ExamResult {
   id: number
   exam_id: number
-  student_id: number
-  total_points: number
-  max_points: number
-  percentage: number
-  status: 'completed' | 'in_progress' | 'not_started'
-  started_at?: string
+  exam_title: string
+  student_id?: number
+  student_name?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'graded'
+  total_points?: number
+  points_earned?: number
+  percentage?: number
+  start_time?: string
+  end_time?: string
   finished_at?: string
-  answers_count: number
-  questions_count: number
-  exam: {
-    id: number
-    title: string
-    description?: string
-    duration_minutes: number
-    start_time: string
-    end_time: string
-    class_id?: number
-    class_name?: string
+  created_at: string
+}
+
+interface UseResultsReturn {
+  results: ExamResult[]
+  isLoading: boolean
+  error: string | null
+  refetch: () => void
+}
+
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = await tokenService.getValidAccessToken()
+  
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  })
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`)
   }
+  
+  return response.json()
 }
 
 export const useResults = () => {
   const [results, setResults] = useState<ExamResult[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { isAuthenticated } = useAuth()
 
-  const getToken = () => {
-    if (typeof window === 'undefined') return null
-    return localStorage.getItem('token')
-  }
-
-  const fetchResults = useCallback(async () => {
-    const token = getToken()
-    if (!token || !isAuthenticated) {
-      setIsLoading(false)
-      return
-    }
-
+  const fetchResults = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch('http://localhost:5000/api/student/results', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Erro ao carregar resultados')
-      }
-
-      const data = await response.json()
+      const data = await makeApiRequest('/api/student/results')
       setResults(data)
     } catch (err: any) {
       console.error('Erro ao carregar resultados:', err)
@@ -68,37 +64,21 @@ export const useResults = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated])
+  }
 
-  const getExamResult = useCallback(async (examId: number): Promise<ExamResult | null> => {
-    const token = getToken()
-    if (!token || !isAuthenticated) return null
-
+  const getExamResult = async (examId: number): Promise<ExamResult | null> => {
     try {
-      const response = await fetch(`http://localhost:5000/api/student/results/${examId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null
-        }
-        throw new Error('Erro ao carregar resultado da prova')
-      }
-
-      return await response.json()
+      const data = await makeApiRequest(`/api/student/results/${examId}`)
+      return data
     } catch (err: any) {
       console.error('Erro ao carregar resultado da prova:', err)
       throw err
     }
-  }, [isAuthenticated])
+  }
 
   useEffect(() => {
     fetchResults()
-  }, [fetchResults, isAuthenticated])
+  }, [])
 
   return {
     results,

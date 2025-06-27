@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import tokenService from '@/services/tokenService';
+import { useEffect, useState } from 'react';
 
 export interface Class {
   id: number;
@@ -25,28 +24,15 @@ export interface EnrollmentRequest {
   enrolled_at: string;
 }
 
-const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
-
-const apiRequest = async (url: string, options: RequestInit = {}) => {
-  const token = getAuthToken();
+// Usar a função apiRequest do services/api.ts em vez de reimplementar
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = await tokenService.getValidAccessToken();
   
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (token) {
-    defaultHeaders.Authorization = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api${url}`, {
     ...options,
     headers: {
-      ...defaultHeaders,
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
   });
@@ -69,7 +55,7 @@ export const useClasses = () => {
       setIsLoading(true);
       setError(null);
       
-      const data = await apiRequest('/classes');
+      const data = await makeApiRequest('/classes');
       setClasses(data);
     } catch (err: any) {
       console.error('Erro ao carregar turmas:', err);
@@ -84,7 +70,7 @@ export const useClasses = () => {
       setIsLoading(true);
       setError(null);
       
-      const data = await apiRequest('/classes/available');
+      const data = await makeApiRequest('/classes/available');
       setClasses(data);
     } catch (err: any) {
       console.error('Erro ao carregar turmas disponíveis:', err);
@@ -101,7 +87,7 @@ export const useClasses = () => {
     is_active?: boolean;
   }) => {
     try {
-      const data = await apiRequest('/classes', {
+      const data = await makeApiRequest('/classes', {
         method: 'POST',
         body: JSON.stringify(classData),
       });
@@ -115,7 +101,7 @@ export const useClasses = () => {
 
   const requestEnrollment = async (classId: number) => {
     try {
-      const data = await apiRequest(`/classes/${classId}/request-enrollment`, {
+      const data = await makeApiRequest(`/classes/${classId}/request-enrollment`, {
         method: 'POST',
       });
       
@@ -127,7 +113,7 @@ export const useClasses = () => {
 
   const enrollInClass = async (classId: number) => {
     try {
-      const data = await apiRequest(`/classes/${classId}/enroll`, {
+      const data = await makeApiRequest(`/classes/${classId}/enroll`, {
         method: 'POST',
       });
       
@@ -163,7 +149,7 @@ export const useEnrollmentRequests = (classId: number) => {
       setIsLoading(true);
       setError(null);
       
-      const data = await apiRequest(`/classes/${classId}/enrollment-requests`);
+      const data = await makeApiRequest(`/classes/${classId}/enrollment-requests`);
       setRequests(data);
     } catch (err: any) {
       console.error('Erro ao carregar solicitações:', err);
@@ -175,7 +161,7 @@ export const useEnrollmentRequests = (classId: number) => {
 
   const approveRequest = async (enrollmentId: number) => {
     try {
-      await apiRequest(`/classes/${classId}/approve-enrollment/${enrollmentId}`, {
+      await makeApiRequest(`/classes/${classId}/approve-enrollment/${enrollmentId}`, {
         method: 'POST',
       });
       
@@ -188,7 +174,7 @@ export const useEnrollmentRequests = (classId: number) => {
 
   const approveAllRequests = async () => {
     try {
-      const data = await apiRequest(`/classes/${classId}/approve-all-enrollments`, {
+      const data = await makeApiRequest(`/classes/${classId}/approve-all-enrollments`, {
         method: 'POST',
       });
       
@@ -202,7 +188,7 @@ export const useEnrollmentRequests = (classId: number) => {
 
   const rejectRequest = async (enrollmentId: number) => {
     try {
-      await apiRequest(`/classes/${classId}/reject-enrollment/${enrollmentId}`, {
+      await makeApiRequest(`/classes/${classId}/reject-enrollment/${enrollmentId}`, {
         method: 'POST',
       });
       
@@ -236,44 +222,44 @@ export const useClass = (classId: number) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadClass = useCallback(async () => {
-    if (!classId) return;
-    
-    setIsLoading(true);
-    setError(null);
+  const fetchClass = async () => {
     try {
-      const data = await apiRequest(`/classes/${classId}`);
+      setIsLoading(true);
+      setError(null);
+      
+      const data = await makeApiRequest(`/classes/${classId}`);
       setClassData(data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao carregar turma');
+      console.error('Erro ao carregar turma:', err);
+      setError(err.message || 'Erro ao carregar turma');
     } finally {
       setIsLoading(false);
     }
-  }, [classId]);
+  };
 
-  const loadStudents = useCallback(async () => {
-    if (!classId) return;
-    
+  const fetchStudents = async () => {
     try {
-      const data = await apiRequest(`/classes/${classId}/students`);
+      const data = await makeApiRequest(`/classes/${classId}/students`);
       setStudents(data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao carregar estudantes');
+      console.error('Erro ao carregar estudantes:', err);
     }
-  }, [classId]);
+  };
 
   useEffect(() => {
-    loadClass();
-    loadStudents();
-  }, [loadClass, loadStudents]);
+    if (classId) {
+      fetchClass();
+      fetchStudents();
+    }
+  }, [classId]);
 
   return {
     classData,
     students,
     isLoading,
     error,
-    loadClass,
-    loadStudents,
+    refetch: fetchClass,
+    refetchStudents: fetchStudents,
   };
 };
 
@@ -288,10 +274,10 @@ export const useStudentClasses = () => {
       setIsLoading(true);
       setError(null);
       
-      const data = await apiRequest('/student/classes');
+      const data = await makeApiRequest('/student/classes');
       setClasses(data);
     } catch (err: any) {
-      console.error('Erro ao carregar turmas:', err);
+      console.error('Erro ao carregar turmas do estudante:', err);
       setError(err.message || 'Erro ao carregar turmas');
     } finally {
       setIsLoading(false);
@@ -303,7 +289,7 @@ export const useStudentClasses = () => {
       setIsLoading(true);
       setError(null);
       
-      const data = await apiRequest('/student/available-classes');
+      const data = await makeApiRequest('/student/available-classes');
       setClasses(data);
     } catch (err: any) {
       console.error('Erro ao carregar turmas disponíveis:', err);
@@ -315,7 +301,7 @@ export const useStudentClasses = () => {
 
   const requestEnrollment = async (classId: number) => {
     try {
-      const data = await apiRequest(`/classes/${classId}/request-enrollment`, {
+      const data = await makeApiRequest(`/classes/${classId}/request-enrollment`, {
         method: 'POST',
       });
       

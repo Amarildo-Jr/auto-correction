@@ -1,54 +1,73 @@
-import { useAppContext } from '@/contexts/AppContext'
-import { useEffect, useState } from 'react'
+'use client';
 
-interface TeacherResult {
+import tokenService from '@/services/tokenService';
+import { useEffect, useState } from 'react';
+
+export interface TeacherResult {
   id: number
   exam_id: number
   exam_title: string
-  class_name: string
   student_id: number
   student_name: string
   student_email: string
-  total_points: number
-  max_points: number
-  percentage: number
-  status: string
-  started_at: string | null
-  finished_at: string | null
-  time_taken: number | null
+  status: 'pending' | 'in_progress' | 'completed' | 'graded'
+  total_points?: number
+  points_earned?: number
+  percentage?: number
+  start_time?: string
+  end_time?: string
+  finished_at?: string
+  created_at: string
+  answers?: Answer[]
+}
+
+export interface Answer {
+  id: number
+  question_id: number
+  question_text: string
+  question_type: string
+  answer_text?: string
+  selected_alternative_id?: number
+  alternative_text?: string
+  is_correct?: boolean
+  points_earned?: number
+  points_possible: number
+  needs_manual_correction?: boolean
+  corrected_by?: number
+  correction_comment?: string
+}
+
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = await tokenService.getValidAccessToken()
+  
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  })
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`)
+  }
+  
+  return response.json()
 }
 
 export function useTeacherResults() {
-  const { isAuthenticated } = useAppContext()
   const [results, setResults] = useState<TeacherResult[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const getToken = () => {
-    if (typeof window === 'undefined') return null
-    return localStorage.getItem('token')
-  }
-
   const fetchResults = async () => {
-    const token = getToken()
-    if (!token) return
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch('http://localhost:5000/api/teacher/results', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Erro ao buscar resultados')
-      }
-
-      const data = await response.json()
+      const data = await makeApiRequest('/api/teacher/results')
       setResults(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -58,28 +77,23 @@ export function useTeacherResults() {
   }
 
   const recalculateResults = async (examId?: number, studentId?: number, recorrectEssays: boolean = false) => {
-    const token = getToken()
-    if (!token) return { success: false, message: 'Token não encontrado' }
-
     try {
       const body: any = {}
       if (examId) body.exam_id = examId
       if (studentId) body.student_id = studentId
       body.recorrect_essays = recorrectEssays
 
-      const response = await fetch('http://localhost:5000/api/teacher/results/recalculate', {
+      const data = await makeApiRequest('/api/teacher/results/recalculate', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(body)
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        return { success: false, message: data.error || 'Erro ao recalcular' }
+      if (!data.success) {
+        return { 
+          success: false, 
+          message: data.message,
+          recalculated_count: data.recalculated_count 
+        }
       }
 
       // Recarregar resultados após recálculo
@@ -100,7 +114,7 @@ export function useTeacherResults() {
 
   useEffect(() => {
     fetchResults()
-  }, [isAuthenticated])
+  }, [])
 
   return {
     results,
