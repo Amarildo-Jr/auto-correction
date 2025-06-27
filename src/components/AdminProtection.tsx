@@ -3,7 +3,7 @@
 import { PageLoading } from '@/components/LoadingSpinner';
 import { useAppContext } from '@/contexts/AppContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface AdminProtectionProps {
   children: React.ReactNode;
@@ -16,34 +16,43 @@ export const AdminProtection: React.FC<AdminProtectionProps> = ({
 }) => {
   const { user, isAuthenticated, isLoading } = useAppContext();
   const router = useRouter();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push('/login');
-        return;
-      }
+    if (isLoading || hasRedirected) return;
 
-      if (!user || !allowedRoles.includes(user.role as any)) {
-        // Redirecionar baseado no papel do usuário
-        if (user?.role === 'student') {
-          router.push('/student/dashboard');
-        } else if (user?.role === 'admin' || user?.role === 'professor') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/login');
-        }
-        return;
-      }
+    if (!isAuthenticated || !user) {
+      setHasRedirected(true);
+      router.push('/login');
+      return;
     }
-  }, [isAuthenticated, isLoading, user, router, allowedRoles]);
+
+    if (!allowedRoles.includes(user.role as any)) {
+      setHasRedirected(true);
+      // Redirecionar baseado no papel do usuário
+      if (user.role === 'student') {
+        router.push('/student/dashboard');
+      } else if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (user.role === 'professor') {
+        router.push('/teacher/dashboard');
+      } else {
+        router.push('/login');
+      }
+      return;
+    }
+  }, [isAuthenticated, isLoading, user, router, allowedRoles, hasRedirected]);
 
   if (isLoading) {
     return <PageLoading message="Verificando permissões..." />;
   }
 
-  if (!isAuthenticated || !user || !allowedRoles.includes(user.role as any)) {
-    return null; // Será redirecionado pelo useEffect
+  if (!isAuthenticated || !user) {
+    return <PageLoading message="Redirecionando..." />;
+  }
+
+  if (!allowedRoles.includes(user.role as any)) {
+    return <PageLoading message="Redirecionando..." />;
   }
 
   return <>{children}</>;

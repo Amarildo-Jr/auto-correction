@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { CheckCircle } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 interface LogoProps {
   dark?: boolean;
@@ -11,19 +11,21 @@ function Logo({
   className,
   expanded,
   ...props
-}: LogoProps & React.ComponentProps<"img">) {
+}: LogoProps & React.ComponentProps<"div">) {
   return (
-    <span className={cn("flex items-center justify-center gap-2 transition-all duration-300 ease-in-out text-slate-800", className, {
+    <div className={cn("flex items-center justify-center gap-3 transition-all duration-300 ease-in-out", className, {
       "w-16 h-16": !expanded, // tamanho reduzido na versão não expandida
       "w-full h-full": expanded, // tamanho normal quando expandida
     })}>
-      <CheckCircle className="w-12 h-12" />
+      <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+        <BookOpen className="w-7 h-7 text-white" />
+      </div>
       {expanded && (
-        <span className="text-4xl font-bold font-mono">
+        <span className="text-3xl font-bold text-gray-900">
           ProvEx
         </span>
       )}
-    </span>
+    </div>
   );
 }
 

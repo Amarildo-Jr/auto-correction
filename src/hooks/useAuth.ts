@@ -11,13 +11,15 @@ export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
     user: null,
     isLoading: true,
-  isAuthenticated: false,
+    isAuthenticated: false,
   });
 
   const login = useCallback(async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
+      console.log('Tentando fazer login...');
       const { user } = await authService.login({ email, password });
+      console.log('Login bem-sucedido:', user);
       setState({
         user,
         isLoading: false,
@@ -25,6 +27,7 @@ export const useAuth = () => {
       });
       return { success: true, user };
     } catch (error: any) {
+      console.error('Erro no login:', error);
       setState(prev => ({ ...prev, isLoading: false }));
       return { 
         success: false, 
@@ -34,6 +37,7 @@ export const useAuth = () => {
   }, []);
 
   const logout = useCallback(() => {
+    console.log('Fazendo logout...');
     authService.logout();
     setState({
       user: null,
@@ -54,16 +58,21 @@ export const useAuth = () => {
     }
 
     const storedUser = authService.getCurrentUser();
+    console.log('Verificando autenticação - usuário armazenado:', storedUser);
+    
     if (storedUser) {
       try {
         // Verificar se o token ainda é válido
+        console.log('Verificando token válido...');
         const currentUser = await authService.getMe();
+        console.log('Token válido, usuário atual:', currentUser);
         setState({
           user: currentUser,
           isLoading: false,
           isAuthenticated: true,
         });
       } catch (error) {
+        console.error('Token inválido:', error);
         // Token inválido, fazer logout
         authService.logout();
         setState({
@@ -73,6 +82,7 @@ export const useAuth = () => {
         });
       }
     } else {
+      console.log('Nenhum usuário armazenado');
       setState({
         user: null,
         isLoading: false,
