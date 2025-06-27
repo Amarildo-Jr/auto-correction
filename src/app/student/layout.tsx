@@ -4,7 +4,6 @@ import { NotificationCenter } from '@/components/NotificationCenter';
 import { StudentSidebar } from '@/components/student/StudentSidebar';
 import { useAppContext } from '@/contexts/AppContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 export default function StudentLayout({
   children,
@@ -13,29 +12,6 @@ export default function StudentLayout({
 }) {
   const { isAuthenticated, user, isLoading } = useAppContext();
   const router = useRouter();
-  const [hasRedirected, setHasRedirected] = useState(false);
-
-  useEffect(() => {
-    if (isLoading || hasRedirected) return;
-
-    // Verificar se está autenticado
-    if (!isAuthenticated || !user) {
-      setHasRedirected(true);
-      router.push('/login');
-      return;
-    }
-
-    // Permitir acesso para estudantes e admins
-    if (user.role !== 'student' && user.role !== 'admin') {
-      setHasRedirected(true);
-      // Redirecionar baseado no role do usuário
-      if (user.role === 'professor') {
-        router.push('/teacher/dashboard');
-      } else {
-        router.push('/login');
-      }
-    }
-  }, [isAuthenticated, isLoading, user, router, hasRedirected]);
 
   // Mostrar loading enquanto verifica
   if (isLoading) {
@@ -49,18 +25,19 @@ export default function StudentLayout({
     );
   }
 
-  // Verificar se tem permissão
+  // Se não está autenticado, mostrar loading (middleware cuidará do redirecionamento)
   if (!isAuthenticated || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p>Redirecionando...</p>
+          <p>Carregando...</p>
         </div>
       </div>
     );
   }
 
+  // Se não tem permissão, mostrar loading (middleware cuidará do redirecionamento)
   if (user.role !== 'student' && user.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-screen">

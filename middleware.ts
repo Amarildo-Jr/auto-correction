@@ -19,8 +19,11 @@ const roleRoutes = {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
+  console.log(`Middleware executado para: ${pathname}`);
+  
   // Permitir rotas públicas
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(route))) {
+    console.log(`Rota pública permitida: ${pathname}`);
     return NextResponse.next()
   }
 
@@ -37,19 +40,24 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const userRole = request.cookies.get('userRole')?.value
 
+  console.log(`Token presente: ${!!token}, UserRole: ${userRole}`);
+
   // Se não há token, redirecionar para login
   if (!token) {
+    console.log(`Redirecionando para login - sem token. Pathname: ${pathname}`);
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Se não há role, redirecionar para login
   if (!userRole) {
+    console.log(`Redirecionando para login - sem role. Pathname: ${pathname}`);
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Verificar permissões específicas por rota
   if (pathname.startsWith('/admin')) {
     if (userRole !== 'admin') {
+      console.log(`Acesso negado ao admin - role: ${userRole}`);
       // Redirecionar para dashboard apropriado
       const dashboardUrl = userRole === 'professor' ? '/teacher/dashboard' : '/student/dashboard'
       return NextResponse.redirect(new URL(dashboardUrl, request.url))
@@ -58,6 +66,7 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith('/teacher')) {
     if (!['admin', 'professor'].includes(userRole)) {
+      console.log(`Acesso negado ao teacher - role: ${userRole}`);
       // Redirecionar para dashboard apropriado
       const dashboardUrl = userRole === 'student' ? '/student/dashboard' : '/login'
       return NextResponse.redirect(new URL(dashboardUrl, request.url))
@@ -66,12 +75,14 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith('/student')) {
     if (!['admin', 'student'].includes(userRole)) {
+      console.log(`Acesso negado ao student - role: ${userRole}`);
       // Redirecionar para dashboard apropriado
       const dashboardUrl = userRole === 'professor' ? '/teacher/dashboard' : '/login'
       return NextResponse.redirect(new URL(dashboardUrl, request.url))
     }
   }
 
+  console.log(`Acesso permitido para ${pathname} com role: ${userRole}`);
   return NextResponse.next()
 }
 

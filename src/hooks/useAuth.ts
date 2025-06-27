@@ -20,6 +20,10 @@ export const useAuth = () => {
       console.log('Tentando fazer login...');
       const { user } = await authService.login({ email, password });
       console.log('Login bem-sucedido:', user);
+      
+      // Aguardar um pequeno intervalo para garantir que os cookies sejam salvos
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       setState({
         user,
         isLoading: false,

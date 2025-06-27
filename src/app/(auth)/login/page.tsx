@@ -60,10 +60,36 @@ export default function LoginPage() {
 
     try {
       const result = await login(loginEmail, loginPassword);
-      if (!result.success) {
+      if (result.success && result.user) {
+        // Aguardar um momento para garantir que os cookies sejam salvos
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Fazer redirecionamento direto baseado no role do usuário
+        let redirectUrl = '/';
+        switch (result.user.role) {
+          case 'admin':
+            redirectUrl = '/admin/dashboard';
+            break;
+          case 'professor':
+          case 'teacher':
+            redirectUrl = '/teacher/dashboard';
+            break;
+          case 'student':
+            redirectUrl = '/student/dashboard';
+            break;
+          default:
+            redirectUrl = '/';
+            break;
+        }
+
+        console.log('Redirecionando para:', redirectUrl);
+        // Usar window.location.href para garantir que o middleware seja executado
+        window.location.href = redirectUrl;
+      } else {
         setError(result.error || 'Erro ao fazer login');
       }
     } catch (err) {
+      console.error('Erro no handleLogin:', err);
       setError('Erro de conexão. Tente novamente.');
     }
   };

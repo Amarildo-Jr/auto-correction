@@ -45,17 +45,27 @@ class TokenService {
       localStorage.setItem('tokenExpiresAt', tokenData.expiresAt.toString());
       localStorage.setItem('user', JSON.stringify(tokenData.user));
 
-      // Também salvar em cookies para o middleware
+      // Salvar em cookies para o middleware - usar data de expiração mais longa
       const expiryDate = new Date(tokenData.expiresAt);
-      const cookieOptions = `path=/; expires=${expiryDate.toUTCString()}; secure; samesite=strict`;
+      // Garantir que os cookies tenham configuração adequada para produção e desenvolvimento
+      const isSecure = window.location.protocol === 'https:';
+      const cookieOptions = `path=/; expires=${expiryDate.toUTCString()}; ${isSecure ? 'secure; ' : ''}samesite=lax`;
       
+      // Definir cookies individualmente para garantir que sejam salvos
       document.cookie = `token=${tokenData.accessToken}; ${cookieOptions}`;
       document.cookie = `userRole=${tokenData.user.role}; ${cookieOptions}`;
       document.cookie = `refreshToken=${tokenData.refreshToken}; ${cookieOptions}`;
 
+      // Forçar atualização dos valores internos
       this.accessToken = tokenData.accessToken;
       this.refreshToken = tokenData.refreshToken;
       this.expiresAt = tokenData.expiresAt;
+
+      console.log('Tokens salvos com sucesso:', {
+        hasAccessToken: !!tokenData.accessToken,
+        userRole: tokenData.user.role,
+        expiresAt: new Date(tokenData.expiresAt).toLocaleString()
+      });
     } catch (error) {
       console.error('Erro ao salvar tokens no storage:', error);
     }
