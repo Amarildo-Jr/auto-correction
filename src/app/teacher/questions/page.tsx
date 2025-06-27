@@ -15,16 +15,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-// Hook para buscar provas - será substituído por hook real
+// Hook para buscar provas
 const useExams = () => {
-  // Mock de provas - em produção virá de uma API
-  const mockExams = [
-    { id: 1, title: "Prova de Matemática - 1º Bimestre" },
-    { id: 2, title: "Avaliação de História - 2º Bimestre" },
-    { id: 3, title: "Teste de Ciências - Final" },
-  ];
-
-  return { exams: mockExams, isLoading: false };
+  return { exams: [], isLoading: false };
 };
 
 export default function QuestionsPage() {
@@ -327,11 +320,15 @@ export default function QuestionsPage() {
                         <SelectValue placeholder="Selecione uma prova" />
                       </SelectTrigger>
                       <SelectContent>
-                        {exams.map((exam) => (
+                        {exams.length > 0 ? exams.map((exam: any) => (
                           <SelectItem key={exam.id} value={exam.id.toString()}>
                             {exam.title}
                           </SelectItem>
-                        ))}
+                        )) : (
+                          <SelectItem value="none" disabled>
+                            Nenhuma prova disponível
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

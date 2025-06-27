@@ -58,11 +58,10 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
   const [enrollmentId, setEnrollmentId] = useState<number | null>(null)
 
   // Verificar autorização
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'student') {
-      router.push('/login')
-    }
-  }, [isAuthenticated, user?.role, router])
+  if (!isAuthenticated || (user?.role !== 'student' && user?.role !== 'admin')) {
+    router.push('/login')
+    return null
+  }
 
   // Carregar dados da prova
   useEffect(() => {

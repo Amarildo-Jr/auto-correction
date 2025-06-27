@@ -140,7 +140,7 @@ function TeacherDashboardContent() {
   }, [results, exams]);
 
   // Verificar autorização
-  if (!isAuthenticated || (user?.role !== 'professor' && user?.role !== 'teacher')) {
+  if (!isAuthenticated || (user?.role !== 'professor' && user?.role !== 'admin')) {
     router.push('/login');
     return null;
   }
@@ -286,41 +286,15 @@ function TeacherDashboardContent() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <XCircle className="w-4 h-4 text-orange-500 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-orange-800">Comportamento Suspeito</p>
-                  <p className="text-sm text-orange-700">João Silva - Múltiplas trocas de aba</p>
-                  <p className="text-xs text-orange-600 mt-1">Prova: Matemática Básica - há 5 min</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                <XCircle className="w-4 h-4 text-red-500 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-red-800">Atividade Suspeita</p>
-                  <p className="text-sm text-red-700">Maria Santos - Tentativas de copiar/colar</p>
-                  <p className="text-xs text-red-600 mt-1">Prova: História do Brasil - há 12 min</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <Clock className="w-4 h-4 text-yellow-500 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-800">Tempo Suspeito</p>
-                  <p className="text-sm text-yellow-700">Pedro Costa - Fora da aba por 2 minutos</p>
-                  <p className="text-xs text-yellow-600 mt-1">Prova: Física I - há 8 min</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center py-4">
+            <div className="text-center py-8 text-gray-500">
+              <XCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>Nenhum alerta recente</p>
+              <p className="text-sm mt-2">Suas provas estão sendo monitoradas normalmente</p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push('/teacher/monitoring')}
-                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                className="mt-4"
               >
                 Ver Relatório Completo
               </Button>
@@ -329,36 +303,7 @@ function TeacherDashboardContent() {
         </Card>
       </div>
 
-      {/* Estatísticas de Monitoramento */}
-      <Card className="border-0 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-500" />
-            Estatísticas de Monitoramento (Últimos 7 dias)
-          </CardTitle>
-          <CardDescription>Análise de comportamentos durante as provas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">23</div>
-              <div className="text-sm text-blue-700">Provas Monitoradas</div>
-            </div>
-            <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">7</div>
-              <div className="text-sm text-orange-700">Alertas Gerados</div>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">3</div>
-              <div className="text-sm text-red-700">Casos Críticos</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">87%</div>
-              <div className="text-sm text-green-700">Taxa de Conformidade</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Atividades Recentes */}
       <Card className="border-0 shadow-md">

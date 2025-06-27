@@ -7,13 +7,35 @@ const api = axios.create({
 // Interceptor para adicionar o token em todas as requisições
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
   }
   return config;
 });
+
+// Interceptor para tratar respostas e erros de autenticação
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado ou inválido
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        
+        // Redirecionar para login se não estiver já na página de login
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Tipos
 export interface LoginCredentials {
@@ -105,6 +127,10 @@ export const authService = {
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      // Também armazenar em cookies para o middleware
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
+      document.cookie = `userRole=${user.role}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
     }
     return { token, user };
   },
@@ -120,14 +146,22 @@ export const authService = {
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      // Também armazenar em cookies para o middleware
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
+      document.cookie = `userRole=${user.role}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
     }
     return { token, user };
   },
 
   logout() {
     if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
+      
+      // Remover cookies também
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
   },
 

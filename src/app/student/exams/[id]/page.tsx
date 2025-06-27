@@ -140,8 +140,8 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
     }
   }, [examWithQuestions, isStarted, enrollmentStatus])
 
-  // Verificar autorização - movido para depois dos hooks
-  if (!isAuthenticated || user?.role !== 'student') {
+  // Verificar autorização
+  if (!isAuthenticated || (user?.role !== 'student' && user?.role !== 'admin')) {
     router.push('/login')
     return null
   }

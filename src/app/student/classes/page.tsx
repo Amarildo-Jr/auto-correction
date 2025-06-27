@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppContext } from "@/contexts/AppContext"
 import api from "@/services/api"
 import { BookOpen, CheckCircle, Clock, Search, User, UserCheck, UserPlus, XCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 interface Class {
@@ -32,6 +33,7 @@ export default function StudentClassesPage() {
   const [availableClasses, setAvailableClasses] = useState<Class[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
+  const router = useRouter()
 
   useEffect(() => {
     if (activeTab === "enrolled") {
@@ -141,8 +143,10 @@ export default function StudentClassesPage() {
   const approvedClasses = enrolledClasses.filter(cls => cls.enrollment_status === 'approved').length
   const pendingRequests = enrolledClasses.filter(cls => cls.enrollment_status === 'pending').length
 
-  if (!isAuthenticated || user?.role !== 'student') {
-    return <div>Acesso negado</div>
+  // Verificar autorização
+  if (!isAuthenticated || (user?.role !== 'student' && user?.role !== 'admin')) {
+    router.push('/login')
+    return null
   }
 
   if (isLoading) {

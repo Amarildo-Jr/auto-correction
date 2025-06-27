@@ -22,7 +22,7 @@ export default function TeacherLayout({
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
-                  ProvEx - Professor
+                  ProvEx - {user?.role === 'admin' ? 'Admin (Área do Professor)' : 'Professor'}
                 </h1>
                 <p className="text-sm text-gray-600">
                   Bem-vindo, {user?.name}
@@ -31,7 +31,8 @@ export default function TeacherLayout({
               <div className="flex items-center gap-4">
                 <NotificationCenter />
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${user?.role === 'admin' ? 'bg-red-600' : 'bg-blue-600'
+                    }`}>
                     <span className="text-white text-sm font-medium">
                       {user?.name?.charAt(0).toUpperCase()}
                     </span>

@@ -59,7 +59,7 @@ export default function StudentResultPage({ params }: { params: { id: string } }
   }, [params.id])
 
   // Verificar autorização
-  if (!isAuthenticated || user?.role !== 'student') {
+  if (!isAuthenticated || (user?.role !== 'student' && user?.role !== 'admin')) {
     router.push('/login')
     return null
   }
