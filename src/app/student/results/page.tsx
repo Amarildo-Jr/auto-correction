@@ -15,7 +15,6 @@ export default function StudentResults() {
   const router = useRouter()
   const { results, isLoading, error } = useResults()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedClass, setSelectedClass] = useState('')
 
   if (isLoading) {
     return <LoadingSpinner />
@@ -41,30 +40,20 @@ export default function StudentResults() {
 
   // Filtrar resultados baseado na busca e turma selecionada
   const filteredResults = results.filter(result => {
-    const matchesSearch = result.exam.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesClass = !selectedClass || result.exam.class_id?.toString() === selectedClass
-    return matchesSearch && matchesClass
+    const matchesSearch = result.exam_title.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesSearch
   })
 
   // Calcular estatísticas
   const averageGrade = filteredResults.length > 0
-    ? filteredResults.reduce((sum, result) => sum + result.percentage, 0) / filteredResults.length
+    ? filteredResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / filteredResults.length
     : 0
 
   const highestGrade = filteredResults.length > 0
-    ? Math.max(...filteredResults.map(result => result.percentage))
+    ? Math.max(...filteredResults.map(result => result.percentage || 0))
     : 0
 
-  const goodPerformanceExams = filteredResults.filter(result => result.percentage >= 70).length
-
-  // Obter lista única de turmas dos resultados
-  const uniqueClasses = Array.from(
-    new Map(
-      results
-        .filter(result => result.exam.class_id && result.exam.class_name)
-        .map(result => [result.exam.class_id, { id: result.exam.class_id, name: result.exam.class_name }])
-    ).values()
-  )
+  const goodPerformanceExams = filteredResults.filter(result => (result.percentage || 0) >= 70).length
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -161,18 +150,6 @@ export default function StudentResults() {
             className="pl-10"
           />
         </div>
-        <select
-          className="rounded-md border border-input bg-background px-3 py-2 min-w-[200px]"
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-        >
-          <option value="">Todas as turmas</option>
-          {uniqueClasses.map((classItem) => (
-            <option key={classItem.id} value={classItem.id?.toString()}>
-              {classItem.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Tabela de resultados */}
@@ -185,15 +162,15 @@ export default function StudentResults() {
             <div className="text-center py-12">
               <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {searchTerm || selectedClass ? 'Nenhum resultado encontrado' : 'Nenhum resultado disponível'}
+                {searchTerm ? 'Nenhum resultado encontrado' : 'Nenhum resultado disponível'}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || selectedClass
+                {searchTerm
                   ? 'Tente ajustar os filtros de busca'
                   : 'Você ainda não possui resultados de provas'
                 }
               </p>
-              {!searchTerm && !selectedClass && (
+              {!searchTerm && (
                 <Button onClick={() => router.push('/student/exams')}>
                   Ver Provas Disponíveis
                 </Button>
@@ -213,20 +190,20 @@ export default function StudentResults() {
               </TableHeader>
               <TableBody>
                 {filteredResults.map((result) => {
-                  const gradeStatus = getGradeStatus(result.percentage)
+                  const gradeStatus = getGradeStatus(result.percentage || 0)
                   return (
                     <TableRow key={result.id}>
                       <TableCell>
                         <div>
-                          <h3 className="font-medium">{result.exam.title}</h3>
+                          <h3 className="font-medium">{result.exam_title}</h3>
                           <p className="text-sm text-muted-foreground">
-                            Duração: {result.exam.duration_minutes} min
+                            Prova ID: {result.exam_id}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {result.exam.class_name || 'N/A'}
+                          N/A
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -238,11 +215,11 @@ export default function StudentResults() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(result.percentage)}`}>
-                          {result.total_points.toFixed(1)}/{result.max_points.toFixed(1)}
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(result.percentage || 0)}`}>
+                          {result.points_earned?.toFixed(1) || 'N/A'}/{result.total_points?.toFixed(1) || 'N/A'}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {result.percentage.toFixed(1)}%
+                          {result.percentage?.toFixed(1) || 'N/A'}%
                         </div>
                       </TableCell>
                       <TableCell>

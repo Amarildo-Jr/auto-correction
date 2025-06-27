@@ -23,7 +23,6 @@ export default function TeacherResultsPage() {
   const searchParams = useSearchParams()
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedClass, setSelectedClass] = useState('')
   const [selectedExam, setSelectedExam] = useState(searchParams.get('exam') || '')
   const [filteredResults, setFilteredResults] = useState<any[]>([])
   const [isRecalculating, setIsRecalculating] = useState(false)
@@ -43,13 +42,8 @@ export default function TeacherResultsPage() {
     if (searchTerm) {
       filtered = filtered.filter(result =>
         result.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        result.exam_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        result.class_name.toLowerCase().includes(searchTerm.toLowerCase())
+        result.exam_title.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    }
-
-    if (selectedClass) {
-      filtered = filtered.filter(result => result.class_name.includes(selectedClass))
     }
 
     if (selectedExam) {
@@ -57,7 +51,7 @@ export default function TeacherResultsPage() {
     }
 
     setFilteredResults(filtered)
-  }, [searchTerm, selectedClass, selectedExam, results])
+  }, [searchTerm, selectedExam, results])
 
   if (examsLoading || classesLoading || resultsLoading) {
     return <LoadingSpinner />
@@ -224,19 +218,6 @@ export default function TeacherResultsPage() {
                 className="pl-10"
               />
             </div>
-
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-            >
-              <option value="">Todas as turmas</option>
-              {classes.map((classObj) => (
-                <option key={classObj.id} value={classObj.name}>
-                  {classObj.name}
-                </option>
-              ))}
-            </select>
 
             <select
               value={selectedExam}
