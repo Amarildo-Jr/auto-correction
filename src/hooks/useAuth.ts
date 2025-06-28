@@ -1,8 +1,8 @@
-import { authService, User } from '@/services/api';
+import { authService } from '@/services/api';
 import { useCallback, useEffect, useState } from 'react';
 
 interface AuthState {
-  user: User | null;
+  user: any;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -15,21 +15,26 @@ export const useAuth = () => {
   });
 
   const login = useCallback(async (email: string, password: string) => {
-    setState(prev => ({ ...prev, isLoading: true }));
     try {
-      console.log('Tentando fazer login...');
-      const { user } = await authService.login({ email, password });
-      console.log('Login bem-sucedido:', user);
+      setState(prev => ({ ...prev, isLoading: true }));
+      
+      const result = await authService.login({ email, password });
       
       setState({
-        user,
+        user: result.user,
         isLoading: false,
         isAuthenticated: true,
       });
-      return { success: true, user };
+
+      return { success: true, user: result.user };
     } catch (error: any) {
       console.error('Erro no login:', error);
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+      
       return { 
         success: false, 
         error: error.response?.data?.message || 'Erro ao fazer login' 
@@ -38,7 +43,6 @@ export const useAuth = () => {
   }, []);
 
   const logout = useCallback(() => {
-    console.log('Fazendo logout...');
     authService.logout();
     setState({
       user: null,
@@ -61,47 +65,19 @@ export const useAuth = () => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     
-    console.log('Verificando autenticação - token:', !!token, 'user:', !!userStr);
-    
     if (token && userStr) {
       try {
         const storedUser = JSON.parse(userStr);
-        console.log('Token e usuário encontrados, verificando token válido...');
         
-        // Verificar se o token ainda é válido fazendo uma requisição
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        setState({
+          user: storedUser,
+          isLoading: false,
+          isAuthenticated: true,
         });
-        
-        if (response.ok) {
-          const currentUser = await response.json();
-          console.log('Token válido, usuário atual:', currentUser);
-          setState({
-            user: currentUser,
-            isLoading: false,
-            isAuthenticated: true,
-          });
-        } else {
-          console.error('Token inválido, removendo dados');
-          // Token inválido, limpar dados
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          setState({
-            user: null,
-            isLoading: false,
-            isAuthenticated: false,
-          });
-        }
       } catch (error) {
-        console.error('Erro ao verificar token:', error);
-        // Erro ao verificar, limpar dados
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        console.error('Erro ao verificar autenticação:', error);
+        // Se der erro, limpar dados
+        authService.logout();
         setState({
           user: null,
           isLoading: false,
@@ -109,7 +85,6 @@ export const useAuth = () => {
         });
       }
     } else {
-      console.log('Nenhum token ou usuário armazenado');
       setState({
         user: null,
         isLoading: false,

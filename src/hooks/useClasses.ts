@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { classService } from '@/services/api';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface Class {
   id: number;
   name: string;
   description?: string;
-  instructor_id: number;
-  instructor_name?: string;
-  schedule?: string;
-  is_active: boolean;
+  professor_id: number;
   created_at: string;
+  updated_at: string;
 }
 
 export interface EnrollmentRequest {
@@ -49,20 +48,19 @@ export const useClasses = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const data = await makeApiRequest('/classes');
+      const data = await classService.getAll();
       setClasses(data);
     } catch (err: any) {
-      console.error('Erro ao carregar turmas:', err);
-      setError(err.message || 'Erro ao carregar turmas');
+      console.error('Erro ao buscar turmas:', err);
+      setError(err.response?.data?.message || 'Erro ao carregar turmas');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const fetchAvailableClasses = async () => {
     try {
@@ -124,7 +122,7 @@ export const useClasses = () => {
 
   useEffect(() => {
     fetchClasses();
-  }, []);
+  }, [fetchClasses]);
 
   return {
     classes,
@@ -264,62 +262,5 @@ export const useClass = (classId: number) => {
 
 // Hook específico para turmas de estudantes
 export const useStudentClasses = () => {
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchClasses = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const data = await makeApiRequest('/student/classes');
-      setClasses(data);
-    } catch (err: any) {
-      console.error('Erro ao carregar turmas do estudante:', err);
-      setError(err.message || 'Erro ao carregar turmas');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchAvailableClasses = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const data = await makeApiRequest('/student/available-classes');
-      setClasses(data);
-    } catch (err: any) {
-      console.error('Erro ao carregar turmas disponíveis:', err);
-      setError(err.message || 'Erro ao carregar turmas disponíveis');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const requestEnrollment = async (classId: number) => {
-    try {
-      const data = await makeApiRequest(`/classes/${classId}/request-enrollment`, {
-        method: 'POST',
-      });
-      
-      return data;
-    } catch (err: any) {
-      throw new Error(err.message || 'Erro ao solicitar participação');
-    }
-  };
-
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  return {
-    classes,
-    isLoading,
-    error,
-    requestEnrollment,
-    fetchAvailableClasses,
-    refetch: fetchClasses,
-  };
+  return useClasses(); // Por enquanto usa o mesmo endpoint
 }; 

@@ -1,71 +1,38 @@
 import axios from 'axios';
 
+// Configuração base da API
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Interceptor para adicionar o token em todas as requisições
-api.interceptors.request.use(async (config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+// Função para obter token do localStorage
+const getToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+};
+
+// Interceptor simples para adicionar token
+api.interceptors.request.use(
+  (config) => {
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-  }
-  return config;
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// Interceptor para tratar respostas e erros de autenticação
+// Interceptor simples para tratar 401
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Se recebeu 401 e ainda não tentou renovar o token
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      if (typeof window !== 'undefined') {
-        const refreshToken = localStorage.getItem('refreshToken');
-        
-        if (refreshToken) {
-          try {
-            // Tentar renovar o token
-            const response = await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
-              { refresh_token: refreshToken }
-            );
-
-            const { token, refresh_token, user } = response.data;
-            
-            // Salvar novos tokens
-            localStorage.setItem('token', token);
-            localStorage.setItem('refreshToken', refresh_token);
-            localStorage.setItem('user', JSON.stringify(user));
-            
-            // Refazer a requisição original com o novo token
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          } catch (refreshError) {
-            console.error('Falha ao renovar token:', refreshError);
-            
-            // Limpar dados e redirecionar para login
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            
-            if (!window.location.pathname.includes('/login')) {
-              window.location.href = '/login';
-            }
-            
-            return Promise.reject(refreshError);
-          }
-        }
-      }
-    }
-
-    // Para outros erros 401 ou se a renovação falhou
+  (error) => {
     if (error.response?.status === 401) {
+      // Limpar dados e redirecionar para login
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
@@ -76,12 +43,11 @@ api.interceptors.response.use(
         }
       }
     }
-
     return Promise.reject(error);
   }
 );
 
-// Tipos
+// Interfaces
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -89,78 +55,75 @@ export interface LoginCredentials {
 
 export interface User {
   id: number;
+  name: string;
   email: string;
-  name: string;
-  role: 'admin' | 'professor' | 'student';
-  created_at: string;
-}
-
-export interface Class {
-  id: number;
-  name: string;
-  description: string;
-  instructor_id: number;
-  schedule: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface ClassEnrollment {
-  id: number;
-  class_id: number;
-  student_id: number;
-  enrolled_at: string;
+  role: string;
 }
 
 export interface Exam {
   id: number;
   title: string;
-  description: string;
-  duration_minutes: number;
+  description?: string;
+  duration: number;
+  total_points: number;
   start_time: string;
   end_time: string;
-  created_by: number;
-  class_id?: number;
-  status: 'draft' | 'published' | 'finished';
+  is_active: boolean;
+  professor_id: number;
+  class_id: number | undefined;
   created_at: string;
+  updated_at: string;
+}
+
+export interface Class {
+  id: number;
+  name: string;
+  description?: string;
+  professor_id: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Question {
   id: number;
   exam_id: number;
   question_text: string;
-  question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'essay';
+  question_type: 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
   points: number;
-  order_number: number;
-  alternatives?: Alternative[];
+  options?: string[];
+  correct_answer?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Alternative {
-  id: number;
-  question_id: number;
-  alternative_text: string;
-  is_correct: boolean;
-  order_number: number;
-}
-
-export interface ExamEnrollment {
+export interface ExamResult {
   id: number;
   exam_id: number;
   student_id: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'graded';
-  start_time?: string;
-  end_time?: string;
-  created_at: string;
+  score: number;
+  percentage?: number;
+  total_points?: number;
+  exam_title: string;
+  student_name: string;
+  submitted_at: string;
+  corrected_at?: string;
+  is_corrected: boolean;
+  status: 'pending' | 'completed' | 'corrected';
 }
 
-export interface Answer {
+export interface TeacherResult {
   id: number;
-  enrollment_id: number;
-  question_id: number;
-  answer_text?: string;
-  selected_alternative_id?: number;
-  points_earned?: number;
-  created_at: string;
+  exam_id: number;
+  student_id: number;
+  score: number;
+  percentage?: number;
+  total_points?: number;
+  exam_title: string;
+  student_name: string;
+  submitted_at: string;
+  corrected_at?: string;
+  is_corrected: boolean;
+  status: 'pending' | 'completed' | 'corrected';
 }
 
 // Serviços de autenticação
@@ -169,7 +132,7 @@ export const authService = {
     const response = await api.post('/api/auth/login', credentials);
     const loginData = response.data;
     
-    // Salvar dados apenas no localStorage
+    // Salvar dados no localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', loginData.token);
       localStorage.setItem('refreshToken', loginData.refresh_token);
@@ -188,7 +151,7 @@ export const authService = {
     const response = await api.post('/api/auth/register', userData);
     const loginData = response.data;
     
-    // Salvar dados apenas no localStorage
+    // Salvar dados no localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', loginData.token);
       localStorage.setItem('refreshToken', loginData.refresh_token);
@@ -218,8 +181,7 @@ export const authService = {
   },
 
   getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    return getToken();
   },
 
   isTokenValid(): boolean {
@@ -227,208 +189,148 @@ export const authService = {
   }
 };
 
-// Serviços de usuários
-export const userService = {
-  async create(userData: {
-    name: string; 
-    email: string; 
-    password: string;
-    role: 'admin' | 'professor' | 'student';
-  }) {
-    const response = await api.post('/api/users', userData);
-    return response.data;
-  }
+// Função para fazer requisições com token
+const apiRequest = async (url: string, options: any = {}) => {
+  const token = getToken();
+  
+  const config = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  };
+
+  const response = await api.request({
+    url,
+    ...config,
+  });
+
+  return response.data;
+};
+
+// Verificação de saúde
+export const healthCheck = async () => {
+  const response = await api.get('/api/health');
+  return response.data;
 };
 
 // Serviços de provas
 export const examService = {
   async getAll() {
-    const response = await api.get('/api/exams');
-    return response.data;
+    return apiRequest('/api/exams', { method: 'GET' });
   },
 
-  async getStudentExams() {
-    const response = await api.get('/api/student/exams');
-    return response.data;
+  async getById(id: string) {
+    return apiRequest(`/api/exams/${id}`, { method: 'GET' });
   },
 
-  async getById(id: number) {
-    const response = await api.get(`/api/exams/${id}`);
-    return response.data;
+  async create(examData: any) {
+    return apiRequest('/api/exams', {
+      method: 'POST',
+      data: examData,
+    });
   },
 
-  async create(examData: {
-    title: string;
-    description: string;
-    duration_minutes: number;
-    start_time: string;
-    end_time: string;
-    class_id?: number;
-  }) {
-    const response = await api.post('/api/exams', examData);
-    return response.data;
+  async update(id: string, examData: any) {
+    return apiRequest(`/api/exams/${id}`, {
+      method: 'PUT',
+      data: examData,
+    });
   },
 
-  async update(examId: number, examData: {
-    title?: string;
-    description?: string;
-    duration_minutes?: number;
-    start_time?: string;
-    end_time?: string;
-    class_id?: number;
-    questions?: number[];
-    question_points?: Record<string, number>;
-  }) {
-    const response = await api.put(`/api/exams/${examId}`, examData);
-    return response.data;
-  },
-
-  async addQuestion(examId: number, questionData: {
-    question_text: string;
-    question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'essay';
-    points: number;
-    order_number: number;
-    alternatives?: {
-      text: string;
-      is_correct: boolean;
-      order_number: number;
-    }[];
-  }) {
-    const response = await api.post(`/api/exams/${examId}/questions`, questionData);
-    return response.data;
-  },
-
-  async getEnrollmentStatus(examId: number) {
-    const response = await api.get(`/api/exams/${examId}/enrollment-status`);
-    return response.data;
-  },
-
-  async start(examId: number) {
-    const response = await api.post(`/api/exams/${examId}/start`);
-    return response.data;
-  }
-};
-
-// Serviços de realização de provas
-export const enrollmentService = {
-  async submitAnswer(enrollmentId: number, answerData: {
-    question_id: number;
-    answer_text?: string;
-    selected_alternatives?: number[];
-  }) {
-    const response = await api.post(`/api/enrollments/${enrollmentId}/submit-answer`, answerData);
-    return response.data;
-  },
-
-  async finish(enrollmentId: number) {
-    const response = await api.post(`/api/enrollments/${enrollmentId}/finish`);
-    return response.data;
-  }
-};
-
-// Serviços de monitoramento
-export const monitoringService = {
-  async recordEvent(eventData: {
-    enrollment_id: number;
-    event_type: 'video_capture' | 'screen_capture' | 'focus_change' | 'suspicious_activity';
-    event_data: any;
-  }) {
-    const response = await api.post('/api/monitoring/event', eventData);
-    return response.data;
-  },
-
-  async getSuspiciousActivities(enrollmentId: number) {
-    const response = await api.get(`/api/monitoring/suspicious-activities/${enrollmentId}`);
-    return response.data;
-  },
-
-  async getDashboardAlerts() {
-    const response = await api.get('/api/monitoring/dashboard-alerts');
-    return response.data;
-  },
-
-  async getExamMonitoringStats(examId: number) {
-    const response = await api.get(`/api/monitoring/exam-stats/${examId}`);
-    return response.data;
-  }
-};
-
-// Serviços de notificações
-export const notificationService = {
-  async getNotifications(userId?: number) {
-    const url = userId ? `/api/notifications?user_id=${userId}` : '/api/notifications';
-    const response = await api.get(url);
-    return response.data;
-  },
-
-  async markAsRead(notificationId: number) {
-    const response = await api.patch(`/api/notifications/${notificationId}/read`);
-    return response.data;
-  },
-
-  async markAllAsRead() {
-    const response = await api.patch('/api/notifications/mark-all-read');
-    return response.data;
-  },
-
-  async createNotification(notificationData: {
-    user_id: number;
-    type: string;
-    title: string;
-    message: string;
-    data?: any;
-  }) {
-    const response = await api.post('/api/notifications', notificationData);
-    return response.data;
-  },
-
-  async deleteNotification(notificationId: number) {
-    const response = await api.delete(`/api/notifications/${notificationId}`);
-    return response.data;
+  async delete(id: string) {
+    return apiRequest(`/api/exams/${id}`, { method: 'DELETE' });
   }
 };
 
 // Serviços de turmas
 export const classService = {
   async getAll() {
-    const response = await api.get('/api/classes');
-    return response.data;
+    return apiRequest('/api/classes', { method: 'GET' });
   },
 
-  async getById(id: number) {
-    const response = await api.get(`/api/classes/${id}`);
-    return response.data;
+  async getById(id: string) {
+    return apiRequest(`/api/classes/${id}`, { method: 'GET' });
   },
 
-  async create(classData: {
-    name: string;
-    description?: string;
-    schedule?: string;
-    is_active?: boolean;
-  }) {
-    const response = await api.post('/api/classes', classData);
-    return response.data;
+  async create(classData: any) {
+    return apiRequest('/api/classes', {
+      method: 'POST',
+      data: classData,
+    });
   },
 
-  async enroll(classId: number) {
-    const response = await api.post(`/api/classes/${classId}/enroll`);
-    return response.data;
+  async update(id: string, classData: any) {
+    return apiRequest(`/api/classes/${id}`, {
+      method: 'PUT',
+      data: classData,
+    });
   },
 
-  async getStudents(classId: number) {
-    const response = await api.get(`/api/classes/${classId}/students`);
-    return response.data;
+  async delete(id: string) {
+    return apiRequest(`/api/classes/${id}`, { method: 'DELETE' });
   }
 };
 
-export const apiRequest = async (url: string, options: RequestInit = {}) => {
-  const response = await api.get(url);
-  return response.data;
+// Serviços de questões  
+export const questionService = {
+  async getAll() {
+    return apiRequest('/api/questions', { method: 'GET' });
+  },
+
+  async getById(id: string) {
+    return apiRequest(`/api/questions/${id}`, { method: 'GET' });
+  },
+
+  async getByExam(examId: string) {
+    return apiRequest(`/api/exams/${examId}/questions`, { method: 'GET' });
+  },
+
+  async create(questionData: any) {
+    return apiRequest('/api/questions', {
+      method: 'POST',
+      data: questionData,
+    });
+  },
+
+  async update(id: string, questionData: any) {
+    return apiRequest(`/api/questions/${id}`, {
+      method: 'PUT',
+      data: questionData,
+    });
+  },
+
+  async delete(id: string) {
+    return apiRequest(`/api/questions/${id}`, { method: 'DELETE' });
+  }
 };
 
-export const healthCheck = async () => {
-  const response = await api.get('/api/test');
-  return response.data;
+// Serviços de resultados
+export const resultService = {
+  async getStudentResults() {
+    return apiRequest('/api/student/results', { method: 'GET' });
+  },
+
+  async getTeacherResults() {
+    return apiRequest('/api/teacher/results', { method: 'GET' });
+  },
+
+  async getResultById(id: string) {
+    return apiRequest(`/api/results/${id}`, { method: 'GET' });
+  }
+};
+
+// Serviços de notificações
+export const notificationService = {
+  async getAll() {
+    return apiRequest('/api/notifications', { method: 'GET' });
+  },
+
+  async markAsRead(id: string) {
+    return apiRequest(`/api/notifications/${id}/read`, { method: 'POST' });
+  }
 };
 
 export default api; 
