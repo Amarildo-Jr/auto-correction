@@ -61,10 +61,7 @@ export default function LoginPage() {
     try {
       const result = await login(loginEmail, loginPassword);
       if (result.success && result.user) {
-        // Aguardar um momento para garantir que os cookies sejam salvos
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        // Fazer redirecionamento direto baseado no role do usuário
+        // Redirecionamento direto baseado no role do usuário
         let redirectUrl = '/';
         switch (result.user.role) {
           case 'admin':
@@ -83,8 +80,7 @@ export default function LoginPage() {
         }
 
         console.log('Redirecionando para:', redirectUrl);
-        // Usar window.location.href para garantir que o middleware seja executado
-        window.location.href = redirectUrl;
+        router.push(redirectUrl);
       } else {
         setError(result.error || 'Erro ao fazer login');
       }

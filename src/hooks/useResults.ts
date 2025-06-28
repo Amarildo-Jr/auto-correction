@@ -1,6 +1,5 @@
 'use client'
 
-import tokenService from '@/services/tokenService'
 import { useEffect, useState } from 'react'
 
 export interface ExamResult {
@@ -27,7 +26,7 @@ interface UseResultsReturn {
 }
 
 const makeApiRequest = async (url: string, options: RequestInit = {}) => {
-  const token = await tokenService.getValidAccessToken()
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
   
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`, {
     ...options,

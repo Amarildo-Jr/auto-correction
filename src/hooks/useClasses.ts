@@ -1,6 +1,5 @@
 'use client';
 
-import tokenService from '@/services/tokenService';
 import { useEffect, useState } from 'react';
 
 export interface Class {
@@ -24,9 +23,9 @@ export interface EnrollmentRequest {
   enrolled_at: string;
 }
 
-// Usar a função apiRequest do services/api.ts em vez de reimplementar
+// Usar localStorage diretamente - mais simples e confiável
 const makeApiRequest = async (url: string, options: RequestInit = {}) => {
-  const token = await tokenService.getValidAccessToken();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api${url}`, {
     ...options,

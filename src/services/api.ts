@@ -1,5 +1,4 @@
 import axios from 'axios';
-import tokenService from './tokenService';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
@@ -8,16 +7,9 @@ const api = axios.create({
 // Interceptor para adicionar o token em todas as requisições
 api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
-    try {
-      // Tentar obter um token válido (renovando se necessário)
-      const token = await tokenService.getValidAccessToken();
-      
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.error('Erro ao obter token para requisição:', error);
-      // Continuar sem token - a API retornará 401 se necessário
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
   }
   return config;
@@ -33,35 +25,67 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        // Tentar renovar o token
-        const newToken = await tokenService.refreshAccessToken();
+      if (typeof window !== 'undefined') {
+        const refreshToken = localStorage.getItem('refreshToken');
         
-        if (newToken) {
-          // Refazer a requisição original com o novo token
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return api(originalRequest);
+        if (refreshToken) {
+          try {
+            // Tentar renovar o token
+            const response = await axios.post(
+              `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
+              { refresh_token: refreshToken }
+            );
+
+            const { token, refresh_token, user, expires_in } = response.data;
+            
+            // Salvar novos tokens
+            localStorage.setItem('token', token);
+            localStorage.setItem('refreshToken', refresh_token);
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Atualizar cookies
+            const expiryDate = new Date(Date.now() + (expires_in * 1000));
+            document.cookie = `token=${token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+            document.cookie = `userRole=${user.role}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+            document.cookie = `refreshToken=${refresh_token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+            
+            // Refazer a requisição original com o novo token
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          } catch (refreshError) {
+            console.error('Falha ao renovar token:', refreshError);
+            
+            // Limpar dados e redirecionar para login
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            
+            if (!window.location.pathname.includes('/login')) {
+              window.location.href = '/login';
+            }
+            
+            return Promise.reject(refreshError);
+          }
         }
-      } catch (refreshError) {
-        console.error('Falha ao renovar token:', refreshError);
-        
-        // Se falhou ao renovar, fazer logout e redirecionar
-        tokenService.clearTokens();
-        
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-        
-        return Promise.reject(refreshError);
       }
     }
 
     // Para outros erros 401 ou se a renovação falhou
     if (error.response?.status === 401) {
-      tokenService.clearTokens();
-      
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
 
@@ -157,8 +181,18 @@ export const authService = {
     const response = await api.post('/api/auth/login', credentials);
     const loginData = response.data;
     
-    // Usar o novo sistema de tokens
-    await tokenService.setTokens(loginData);
+    // Salvar dados no localStorage e cookies de forma simples
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', loginData.token);
+      localStorage.setItem('refreshToken', loginData.refresh_token);
+      localStorage.setItem('user', JSON.stringify(loginData.user));
+      
+      // Salvar em cookies para o middleware
+      const expiryDate = new Date(Date.now() + (loginData.expires_in * 1000));
+      document.cookie = `token=${loginData.token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+      document.cookie = `userRole=${loginData.user.role}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+      document.cookie = `refreshToken=${loginData.refresh_token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+    }
     
     return { token: loginData.token, user: loginData.user };
   },
@@ -172,14 +206,33 @@ export const authService = {
     const response = await api.post('/api/auth/register', userData);
     const loginData = response.data;
     
-    // Usar o novo sistema de tokens
-    await tokenService.setTokens(loginData);
+    // Salvar dados no localStorage e cookies
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', loginData.token);
+      localStorage.setItem('refreshToken', loginData.refresh_token);
+      localStorage.setItem('user', JSON.stringify(loginData.user));
+      
+      // Salvar em cookies para o middleware
+      const expiryDate = new Date(Date.now() + (loginData.expires_in * 1000));
+      document.cookie = `token=${loginData.token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+      document.cookie = `userRole=${loginData.user.role}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+      document.cookie = `refreshToken=${loginData.refresh_token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
+    }
     
     return { token: loginData.token, user: loginData.user };
   },
 
   logout() {
-    tokenService.clearTokens();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      
+      // Limpar cookies
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
   },
 
   getCurrentUser(): User | null {
@@ -193,14 +246,13 @@ export const authService = {
     return response.data;
   },
 
-  // Novo método para renovação manual de token
-  async refreshToken() {
-    return await tokenService.refreshAccessToken();
+  getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token');
   },
 
-  // Verificar se o token é válido
   isTokenValid(): boolean {
-    return tokenService.hasValidToken();
+    return !!this.getToken();
   }
 };
 

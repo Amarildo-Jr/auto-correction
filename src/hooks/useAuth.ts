@@ -21,9 +21,6 @@ export const useAuth = () => {
       const { user } = await authService.login({ email, password });
       console.log('Login bem-sucedido:', user);
       
-      // Aguardar um pequeno intervalo para garantir que os cookies sejam salvos
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       setState({
         user,
         isLoading: false,
@@ -61,24 +58,50 @@ export const useAuth = () => {
       return;
     }
 
-    const storedUser = authService.getCurrentUser();
-    console.log('Verificando autenticação - usuário armazenado:', storedUser);
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
     
-    if (storedUser) {
+    console.log('Verificando autenticação - token:', !!token, 'user:', !!userStr);
+    
+    if (token && userStr) {
       try {
-        // Verificar se o token ainda é válido
-        console.log('Verificando token válido...');
-        const currentUser = await authService.getMe();
-        console.log('Token válido, usuário atual:', currentUser);
-        setState({
-          user: currentUser,
-          isLoading: false,
-          isAuthenticated: true,
+        const storedUser = JSON.parse(userStr);
+        console.log('Token e usuário encontrados, verificando token válido...');
+        
+        // Verificar se o token ainda é válido fazendo uma requisição
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
+        
+        if (response.ok) {
+          const currentUser = await response.json();
+          console.log('Token válido, usuário atual:', currentUser);
+          setState({
+            user: currentUser,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+        } else {
+          console.error('Token inválido, removendo dados');
+          // Token inválido, limpar dados
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          setState({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+          });
+        }
       } catch (error) {
-        console.error('Token inválido:', error);
-        // Token inválido, fazer logout
-        authService.logout();
+        console.error('Erro ao verificar token:', error);
+        // Erro ao verificar, limpar dados
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         setState({
           user: null,
           isLoading: false,
@@ -86,7 +109,7 @@ export const useAuth = () => {
         });
       }
     } else {
-      console.log('Nenhum usuário armazenado');
+      console.log('Nenhum token ou usuário armazenado');
       setState({
         user: null,
         isLoading: false,
