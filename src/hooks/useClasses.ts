@@ -8,6 +8,8 @@ export interface Class {
   name: string;
   description?: string;
   professor_id: number;
+  is_active: boolean;
+  schedule?: string;
   created_at: string;
   updated_at: string;
 }

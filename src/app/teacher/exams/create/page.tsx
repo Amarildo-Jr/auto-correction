@@ -125,7 +125,7 @@ function CreateExamContent() {
 
   // Filtrar questões
   const filteredQuestions = questions.filter((question: Question) => {
-    const textMatch = question.text.toLowerCase().includes(questionSearch.toLowerCase())
+    const textMatch = question.question_text.toLowerCase().includes(questionSearch.toLowerCase())
     const typeMatch = questionFilters.type === 'all' ||
       (questionFilters.type === 'single_choice' && question.type === 'single_choice') ||
       (questionFilters.type === 'multiple_choice' && question.type === 'multiple_choice') ||

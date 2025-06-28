@@ -65,10 +65,12 @@ export interface Exam {
   title: string;
   description?: string;
   duration: number;
+  duration_minutes: number;
   total_points: number;
   start_time: string;
   end_time: string;
   is_active: boolean;
+  status: 'draft' | 'published' | 'archived';
   professor_id: number;
   class_id: number | undefined;
   created_at: string;
@@ -80,6 +82,8 @@ export interface Class {
   name: string;
   description?: string;
   professor_id: number;
+  is_active: boolean;
+  schedule?: string;
   created_at: string;
   updated_at: string;
 }
@@ -88,7 +92,11 @@ export interface Question {
   id: number;
   exam_id: number;
   question_text: string;
+  text: string; // alias para question_text
   question_type: 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
+  type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer' | 'essay'; // alias para question_type
+  category?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
   points: number;
   options?: string[];
   correct_answer?: string;
@@ -103,9 +111,11 @@ export interface ExamResult {
   score: number;
   percentage?: number;
   total_points?: number;
+  points_earned?: number;
   exam_title: string;
   student_name: string;
   submitted_at: string;
+  finished_at?: string;
   corrected_at?: string;
   is_corrected: boolean;
   status: 'pending' | 'completed' | 'corrected';
@@ -242,6 +252,12 @@ export const examService = {
 
   async delete(id: string) {
     return apiRequest(`/api/exams/${id}`, { method: 'DELETE' });
+  },
+
+  async start(examId: number) {
+    return apiRequest(`/api/exams/${examId}/start`, {
+      method: 'POST'
+    });
   }
 };
 
@@ -328,8 +344,68 @@ export const notificationService = {
     return apiRequest('/api/notifications', { method: 'GET' });
   },
 
-  async markAsRead(id: string) {
+  async getNotifications() {
+    return apiRequest('/api/notifications', { method: 'GET' });
+  },
+
+  async markAsRead(id: string | number) {
     return apiRequest(`/api/notifications/${id}/read`, { method: 'POST' });
+  },
+
+  async markAllAsRead() {
+    return apiRequest('/api/notifications/mark-all-read', { method: 'POST' });
+  },
+
+  async deleteNotification(id: string | number) {
+    return apiRequest(`/api/notifications/${id}`, { method: 'DELETE' });
+  },
+
+  async createNotification(notificationData: any) {
+    return apiRequest('/api/notifications', {
+      method: 'POST',
+      data: notificationData
+    });
+  }
+};
+
+// Serviços de matrícula/inscrição
+export const enrollmentService = {
+  async enroll(classId: number) {
+    return apiRequest('/api/enrollment', {
+      method: 'POST',
+      data: { class_id: classId }
+    });
+  },
+
+  async submitAnswer(enrollmentId: number, answerData: any) {
+    return apiRequest(`/api/enrollment/${enrollmentId}/answer`, {
+      method: 'POST',
+      data: answerData
+    });
+  },
+
+  async finish(enrollmentId: number) {
+    return apiRequest(`/api/enrollment/${enrollmentId}/finish`, {
+      method: 'POST'
+    });
+  }
+};
+
+// Serviços de monitoramento
+export const monitoringService = {
+  async getExamMonitoringStats(examId: number) {
+    return apiRequest(`/api/exams/${examId}/monitoring`, { method: 'GET' });
+  },
+
+  async getStudentsProgress(examId: number) {
+    return apiRequest(`/api/exams/${examId}/students-progress`, { method: 'GET' });
+  },
+
+  async recordEvent(eventData: any) {
+    return apiRequest('/api/monitoring/events', {
+      method: 'POST',
+      data: eventData
+    });
   }
 };
 

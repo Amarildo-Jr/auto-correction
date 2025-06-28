@@ -181,7 +181,7 @@ export default function ExamsPage() {
                   </div>
                 </TableCell>
                 <TableCell>{getClassName(exam.class_id)}</TableCell>
-                <TableCell>{exam.duration_minutes} min</TableCell>
+                <TableCell>{exam.duration} min</TableCell>
                 <TableCell>{formatDate(exam.start_time)}</TableCell>
                 <TableCell>{getStatusBadge(exam.status)}</TableCell>
                 <TableCell className="text-center">

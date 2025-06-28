@@ -10,9 +10,11 @@ export interface ExamResult {
   score: number
   percentage?: number
   total_points?: number
+  points_earned?: number
   exam_title: string
   student_name: string
   submitted_at: string
+  finished_at?: string
   corrected_at?: string
   is_corrected: boolean
   status: 'pending' | 'completed' | 'corrected'

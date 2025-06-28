@@ -71,7 +71,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
             const startTime = new Date(status.start_time)
             const now = new Date()
             const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60))
-            const remainingMinutes = Math.max(0, exam.duration_minutes - elapsedMinutes)
+            const remainingMinutes = Math.max(0, exam.duration - elapsedMinutes)
             setTimeRemaining(remainingMinutes * 60)
 
             // Carregar respostas existentes

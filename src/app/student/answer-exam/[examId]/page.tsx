@@ -63,7 +63,7 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
       const foundExam = exams.find(e => e.id.toString() === params.examId)
       if (foundExam) {
         setExam(foundExam)
-        setTimeRemaining(foundExam.duration_minutes * 60) // converter para segundos
+        setTimeRemaining(foundExam.duration * 60) // converter para segundos
 
         // Simular questões (em um caso real, viria da API)
         const mockQuestions: Question[] = [

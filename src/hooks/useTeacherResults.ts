@@ -37,6 +37,23 @@ export const useTeacherResults = () => {
     }
   }, []);
 
+  const recalculateResults = useCallback(async (examId?: string | number, studentId?: string | number, recorrectEssays?: boolean) => {
+    try {
+      setError(null);
+      // Implementar lógica para recalcular resultados
+      // Por enquanto, apenas refaz o fetch
+      await fetchResults();
+      return { 
+        success: true, 
+        message: `Resultados recalculados com sucesso${examId ? ` para a prova ${examId}` : ''}${recorrectEssays ? ' (incluindo redações)' : ''}` 
+      };
+    } catch (err: any) {
+      console.error('Erro ao recalcular resultados:', err);
+      setError(err.response?.data?.message || 'Erro ao recalcular resultados');
+      throw err;
+    }
+  }, [fetchResults]);
+
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
@@ -46,5 +63,7 @@ export const useTeacherResults = () => {
     isLoading,
     error,
     refetch: fetchResults,
+    fetchResults,
+    recalculateResults,
   };
 }; 

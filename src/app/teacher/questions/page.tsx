@@ -73,7 +73,7 @@ export default function QuestionsPage() {
   const handleDelete = async (id: number) => {
     if (confirm("Tem certeza que deseja excluir esta questão?")) {
       try {
-        await deleteQuestion(id);
+        await deleteQuestion(id.toString());
       } catch (error: any) {
         alert("Erro ao excluir questão: " + error.message);
       }
@@ -103,8 +103,8 @@ export default function QuestionsPage() {
     }
 
     try {
-      const result = await addQuestionsToExam(parseInt(selectedExamId), selectedQuestions);
-      alert(result.message);
+      const result = await addQuestionsToExam(selectedExamId, selectedQuestions);
+      alert(result.success ? "Questões adicionadas com sucesso" : "Erro ao adicionar questões");
       setSelectedQuestions([]);
       setSelectedExamId("");
       setIsAddToExamDialogOpen(false);

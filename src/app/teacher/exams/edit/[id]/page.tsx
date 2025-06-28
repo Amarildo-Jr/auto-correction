@@ -51,7 +51,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     const loadExam = async () => {
       try {
         setIsLoadingExam(true)
-        const exam = await getExam(parseInt(params.id))
+        const exam = await getExam(params.id)
 
         if (exam) {
           setFormData({
@@ -194,7 +194,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
         question_points: questionPoints
       }
 
-      const result = await updateExam(parseInt(params.id), examData)
+      const result = await updateExam(params.id, examData)
       if (result.success) {
         router.push('/teacher/exams')
       } else {
