@@ -233,6 +233,7 @@ function CreateExamContent() {
   }
 
   const truncarTexto = (texto: string, tamanhoMaximo: number) => {
+    if (!texto || typeof texto !== 'string') return '';
     if (texto.length > tamanhoMaximo) {
       return texto.substring(0, tamanhoMaximo) + "..."
     }

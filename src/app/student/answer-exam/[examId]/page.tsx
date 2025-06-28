@@ -213,9 +213,11 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
     }
   }
 
-  const currentQuestion = questions[currentQuestionIndex]
+  // Garantir que questions seja sempre um array válido
+  const safeQuestions = Array.isArray(questions) ? questions : [];
+  const currentQuestion = safeQuestions[currentQuestionIndex]
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : null
-  const totalQuestions = questions.length
+  const totalQuestions = safeQuestions.length
   const answeredQuestions = Object.keys(answers).length
   const progressPercentage = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0
 
@@ -236,8 +238,8 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
                 <h3 className="font-semibold text-lg">Informações da Prova</h3>
                 <div className="space-y-2 text-sm">
                   <p><strong>Duração:</strong> {exam.duration_minutes} minutos</p>
-                  <p><strong>Total de Questões:</strong> {questions.length}</p>
-                  <p><strong>Pontuação Total:</strong> {questions.reduce((sum, q) => sum + q.points, 0)} pontos</p>
+                  <p><strong>Total de Questões:</strong> {safeQuestions.length}</p>
+                  <p><strong>Pontuação Total:</strong> {safeQuestions.reduce((sum, q) => sum + q.points, 0)} pontos</p>
                   <p><strong>Início:</strong> {new Date(exam.start_time).toLocaleString('pt-BR')}</p>
                   <p><strong>Fim:</strong> {new Date(exam.end_time).toLocaleString('pt-BR')}</p>
                 </div>
@@ -345,7 +347,7 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-5 lg:grid-cols-4 gap-2">
-                  {questions.map((question, index) => (
+                  {safeQuestions.map((question, index) => (
                     <button
                       key={question.id}
                       onClick={() => setCurrentQuestionIndex(index)}

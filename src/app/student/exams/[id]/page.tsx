@@ -80,7 +80,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
             })
 
             // Inicializar todas as respostas
-            if (examWithQuestions?.questions) {
+            if (examWithQuestions?.questions && Array.isArray(examWithQuestions.questions)) {
               const allAnswers: Answer[] = examWithQuestions.questions.map((question: any) => {
                 return existingAnswersMap.get(question.id) || {
                   question_id: question.id,
@@ -123,7 +123,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
 
   // Inicializar respostas para nova tentativa
   useEffect(() => {
-    if (examWithQuestions?.questions && !isStarted && !enrollmentStatus?.existing_answers) {
+    if (examWithQuestions?.questions && Array.isArray(examWithQuestions.questions) && !isStarted && !enrollmentStatus?.existing_answers) {
       const initialAnswers: Answer[] = examWithQuestions.questions.map((question: any) => ({
         question_id: question.id,
         answer_text: '',
@@ -174,7 +174,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
         })
 
         // Atualizar respostas
-        if (examWithQuestions?.questions) {
+        if (examWithQuestions?.questions && Array.isArray(examWithQuestions.questions)) {
           const allAnswers: Answer[] = examWithQuestions.questions.map((question: any) => {
             return existingAnswersMap.get(question.id) || {
               question_id: question.id,
@@ -255,7 +255,8 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
   }
 
   const getCurrentQuestion = () => {
-    return examWithQuestions?.questions?.[currentQuestionIndex]
+    const questions = Array.isArray(examWithQuestions?.questions) ? examWithQuestions.questions : [];
+    return questions[currentQuestionIndex]
   }
 
   const getCurrentAnswer = () => {
@@ -264,7 +265,8 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
   }
 
   const nextQuestion = () => {
-    if (currentQuestionIndex < (examWithQuestions?.questions?.length || 0) - 1) {
+    const questionsLength = Array.isArray(examWithQuestions?.questions) ? examWithQuestions.questions.length : 0;
+    if (currentQuestionIndex < questionsLength - 1) {
       setCurrentQuestionIndex(prev => prev + 1)
     }
   }
@@ -493,7 +495,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-5 lg:grid-cols-3 gap-2">
-                {examWithQuestions.questions?.map((question: any, index: number) => {
+                {(Array.isArray(examWithQuestions?.questions) ? examWithQuestions.questions : []).map((question: any, index: number) => {
                   const hasAnswer = answers.find(a => a.question_id === question.id)
                   const isAnswered = hasAnswer && (
                     hasAnswer.answer_text?.trim() ||
@@ -537,141 +539,149 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
 
         {/* Questão Atual */}
         <div className="lg:col-span-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Questão {currentQuestionIndex + 1}</span>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${currentQuestion.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
-                    currentQuestion.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
-                      currentQuestion.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-orange-100 text-orange-800'
-                    }`}>
-                    {currentQuestion.question_type === 'single_choice' ? 'Escolha Única' :
-                      currentQuestion.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
-                        currentQuestion.question_type === 'true_false' ? 'Verdadeiro/Falso' : 'Dissertativa'}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {currentQuestion.points} ponto{currentQuestion.points !== 1 ? 's' : ''}
-                  </span>
+          {currentQuestion ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Questão {currentQuestionIndex + 1}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${currentQuestion.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
+                      currentQuestion.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
+                        currentQuestion.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-orange-100 text-orange-800'
+                      }`}>
+                      {currentQuestion.question_type === 'single_choice' ? 'Escolha Única' :
+                        currentQuestion.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
+                          currentQuestion.question_type === 'true_false' ? 'Verdadeiro/Falso' : 'Dissertativa'}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {currentQuestion.points} ponto{currentQuestion.points !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="prose max-w-none">
+                  <p className="text-lg">{currentQuestion.question_text}</p>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="prose max-w-none">
-                <p className="text-lg">{currentQuestion.question_text}</p>
-              </div>
 
-              {/* Alternativas para questões objetivas */}
-              {currentQuestion.question_type === 'single_choice' && (
-                <RadioGroup
-                  value={currentAnswer?.selected_alternatives[0]?.toString() || ''}
-                  onValueChange={(value) =>
-                    handleAnswerChange(currentQuestion.id, [parseInt(value)])}
-                >
-                  {currentQuestion.alternatives?.map((alternative: any) => (
-                    <div key={alternative.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <RadioGroupItem value={alternative.id.toString()} id={`alt-${alternative.id}`} />
-                      <label
-                        htmlFor={`alt-${alternative.id}`}
-                        className="flex-1 cursor-pointer"
-                      >
-                        {alternative.alternative_text}
-                      </label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
+                {/* Alternativas para questões objetivas */}
+                {currentQuestion.question_type === 'single_choice' && (
+                  <RadioGroup
+                    value={currentAnswer?.selected_alternatives[0]?.toString() || ''}
+                    onValueChange={(value) =>
+                      handleAnswerChange(currentQuestion.id, [parseInt(value)])}
+                  >
+                    {currentQuestion.alternatives?.map((alternative: any) => (
+                      <div key={alternative.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <RadioGroupItem value={alternative.id.toString()} id={`alt-${alternative.id}`} />
+                        <label
+                          htmlFor={`alt-${alternative.id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          {alternative.alternative_text}
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
 
-              {currentQuestion.question_type === 'multiple_choice' && (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600 mb-4">
-                    Selecione todas as alternativas corretas:
-                  </p>
-                  {currentQuestion.alternatives?.map((alternative: any) => (
-                    <div key={alternative.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <Checkbox
-                        id={`alt-${alternative.id}`}
-                        checked={currentAnswer?.selected_alternatives.includes(alternative.id) || false}
-                        onCheckedChange={(checked) => {
-                          const currentSelected = currentAnswer?.selected_alternatives || []
-                          const newSelected = checked
-                            ? [...currentSelected, alternative.id]
-                            : currentSelected.filter(id => id !== alternative.id)
-                          handleAnswerChange(currentQuestion.id, newSelected)
-                        }}
-                      />
-                      <label
-                        htmlFor={`alt-${alternative.id}`}
-                        className="flex-1 cursor-pointer"
-                      >
-                        {alternative.alternative_text}
-                      </label>
-                    </div>
-                  ))}
+                {currentQuestion.question_type === 'multiple_choice' && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Selecione todas as alternativas corretas:
+                    </p>
+                    {currentQuestion.alternatives?.map((alternative: any) => (
+                      <div key={alternative.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <Checkbox
+                          id={`alt-${alternative.id}`}
+                          checked={currentAnswer?.selected_alternatives.includes(alternative.id) || false}
+                          onCheckedChange={(checked) => {
+                            const currentSelected = currentAnswer?.selected_alternatives || []
+                            const newSelected = checked
+                              ? [...currentSelected, alternative.id]
+                              : currentSelected.filter(id => id !== alternative.id)
+                            handleAnswerChange(currentQuestion.id, newSelected)
+                          }}
+                        />
+                        <label
+                          htmlFor={`alt-${alternative.id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          {alternative.alternative_text}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {currentQuestion.question_type === 'true_false' && (
+                  <RadioGroup
+                    value={currentAnswer?.selected_alternatives[0]?.toString() || ''}
+                    onValueChange={(value) =>
+                      handleAnswerChange(currentQuestion.id, [parseInt(value)])}
+                  >
+                    {currentQuestion.alternatives?.map((alternative: any) => (
+                      <div key={alternative.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                        <RadioGroupItem value={alternative.id.toString()} id={`alt-${alternative.id}`} />
+                        <label
+                          htmlFor={`alt-${alternative.id}`}
+                          className="flex-1 cursor-pointer font-medium"
+                        >
+                          {alternative.alternative_text}
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
+
+                {/* Resposta dissertativa */}
+                {currentQuestion.question_type === 'essay' && (
+                  <div className="space-y-3">
+                    <label htmlFor="essay-answer" className="block text-sm font-medium text-gray-700">
+                      Sua resposta:
+                    </label>
+                    <Textarea
+                      id="essay-answer"
+                      rows={8}
+                      value={currentAnswer?.answer_text || ''}
+                      onChange={(e) =>
+                        handleAnswerChange(currentQuestion.id, e.target.value, true)}
+                      placeholder="Digite sua resposta aqui..."
+                      className="resize-none"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Resposta salva automaticamente conforme você digita
+                    </p>
+                  </div>
+                )}
+
+                {/* Navegação entre questões */}
+                <div className="flex justify-between pt-6 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={prevQuestion}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    ← Questão Anterior
+                  </Button>
+
+                  <Button
+                    onClick={nextQuestion}
+                    disabled={currentQuestionIndex === (Array.isArray(examWithQuestions?.questions) ? examWithQuestions.questions.length : 0) - 1}
+                  >
+                    Próxima Questão →
+                  </Button>
                 </div>
-              )}
-
-              {currentQuestion.question_type === 'true_false' && (
-                <RadioGroup
-                  value={currentAnswer?.selected_alternatives[0]?.toString() || ''}
-                  onValueChange={(value) =>
-                    handleAnswerChange(currentQuestion.id, [parseInt(value)])}
-                >
-                  {currentQuestion.alternatives?.map((alternative: any) => (
-                    <div key={alternative.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <RadioGroupItem value={alternative.id.toString()} id={`alt-${alternative.id}`} />
-                      <label
-                        htmlFor={`alt-${alternative.id}`}
-                        className="flex-1 cursor-pointer font-medium"
-                      >
-                        {alternative.alternative_text}
-                      </label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
-
-              {/* Resposta dissertativa */}
-              {currentQuestion.question_type === 'essay' && (
-                <div className="space-y-3">
-                  <label htmlFor="essay-answer" className="block text-sm font-medium text-gray-700">
-                    Sua resposta:
-                  </label>
-                  <Textarea
-                    id="essay-answer"
-                    rows={8}
-                    value={currentAnswer?.answer_text || ''}
-                    onChange={(e) =>
-                      handleAnswerChange(currentQuestion.id, e.target.value, true)}
-                    placeholder="Digite sua resposta aqui..."
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Resposta salva automaticamente conforme você digita
-                  </p>
-                </div>
-              )}
-
-              {/* Navegação entre questões */}
-              <div className="flex justify-between pt-6 border-t">
-                <Button
-                  variant="outline"
-                  onClick={prevQuestion}
-                  disabled={currentQuestionIndex === 0}
-                >
-                  ← Questão Anterior
-                </Button>
-
-                <Button
-                  onClick={nextQuestion}
-                  disabled={currentQuestionIndex === (examWithQuestions.questions?.length || 0) - 1}
-                >
-                  Próxima Questão →
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-500">Carregando questão...</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

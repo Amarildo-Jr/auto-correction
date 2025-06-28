@@ -80,6 +80,7 @@ export default function QuestionsPage() {
   });
 
   const truncarTexto = (texto: string, tamanhoMaximo: number) => {
+    if (!texto || typeof texto !== 'string') return '';
     if (texto.length > tamanhoMaximo) {
       return texto.substring(0, tamanhoMaximo) + "...";
     }
@@ -418,7 +419,7 @@ export default function QuestionsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">
-                          {truncarTexto(question.text, 80)}
+                          {truncarTexto(question.text || question.question_text || '', 80)}
                         </div>
                       </TableCell>
                       <TableCell>

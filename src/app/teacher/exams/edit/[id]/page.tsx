@@ -282,6 +282,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
   }
 
   const truncarTexto = (texto: string, tamanhoMaximo: number) => {
+    if (!texto || typeof texto !== 'string') return '';
     if (texto.length > tamanhoMaximo) {
       return texto.substring(0, tamanhoMaximo) + "..."
     }
@@ -508,7 +509,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                           <TableRow key={questionId}>
                             <TableCell>
                               <div className="font-medium text-sm">
-                                {truncarTexto(question.text, 80)}
+                                {truncarTexto(question.text || question.question_text || '', 80)}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -690,7 +691,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">
-                            {truncarTexto(question.text, 100)}
+                            {truncarTexto(question.text || question.question_text || '', 100)}
                           </div>
                           {question.category && (
                             <div className="text-sm text-gray-500">

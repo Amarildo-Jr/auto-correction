@@ -24,8 +24,11 @@ interface Question {
 }
 
 const ExamPage = (props: { questions: Question[]; duration: number }) => {
+  // Garantir que questions seja sempre um array válido
+  const questions = Array.isArray(props.questions) ? props.questions : [];
+
   const [answers, setAnswers] = useState<AnsweredQuestion[]>(
-    props.questions.map((question) => {
+    questions.map((question) => {
       return {
         id: question.id,
         type: question.objective ? "objective" : "written",
@@ -74,6 +77,18 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
 
   const router = useRouter();
 
+  // Se não há questões, mostrar mensagem
+  if (questions.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-600 mb-4">Nenhuma questão encontrada</h2>
+          <p className="text-gray-500">Esta prova não possui questões disponíveis.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col justify-between min-h-screen">
       <div className="p-4 w-full">
@@ -111,12 +126,12 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
 
         <ProgressBar
           current={currentQuestion}
-          total={props.questions.length}
+          total={questions.length}
           className="mt-4"
         />
 
         <div className="mt-8">
-          {props.questions.map?.((question, index) => (
+          {questions.map((question, index) => (
             <div
               key={index}
               className={`transition-opacity duration-300 ${currentQuestion === question.id ? "opacity-100" : "hidden"
@@ -137,7 +152,7 @@ const ExamPage = (props: { questions: Question[]; duration: number }) => {
         <PaginationBar
           current={currentQuestion}
           onChange={changeCurrentQuestion}
-          total={props.questions.length}
+          total={questions.length}
         />
       </div>
     </div>
