@@ -21,9 +21,15 @@ class TokenService {
     if (typeof window === 'undefined') return;
 
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
-      const expiresAt = localStorage.getItem('tokenExpiresAt');
+      // Tentar carregar do novo formato primeiro
+      let accessToken = localStorage.getItem('accessToken');
+      let refreshToken = localStorage.getItem('refreshToken');
+      let expiresAt = localStorage.getItem('tokenExpiresAt');
+
+      // Se não encontrar no novo formato, tentar no formato antigo
+      if (!accessToken) {
+        accessToken = localStorage.getItem('token');
+      }
 
       if (accessToken && refreshToken && expiresAt) {
         this.accessToken = accessToken;
@@ -40,10 +46,14 @@ class TokenService {
     if (typeof window === 'undefined') return;
 
     try {
+      // Salvar no novo formato
       localStorage.setItem('accessToken', tokenData.accessToken);
       localStorage.setItem('refreshToken', tokenData.refreshToken);
       localStorage.setItem('tokenExpiresAt', tokenData.expiresAt.toString());
       localStorage.setItem('user', JSON.stringify(tokenData.user));
+
+      // Salvar também no formato antigo para compatibilidade
+      localStorage.setItem('token', tokenData.accessToken);
 
       // Salvar em cookies para o middleware - usar data de expiração mais longa
       const expiryDate = new Date(tokenData.expiresAt);
@@ -79,7 +89,7 @@ class TokenService {
     this.expiresAt = 0;
     this.refreshPromise = null;
 
-    // Limpar localStorage
+    // Limpar localStorage (ambos os formatos)
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('tokenExpiresAt');
@@ -198,35 +208,34 @@ class TokenService {
 
     try {
       // Tentar renovar o token
-      const newToken = await this.refreshAccessToken();
-      return newToken;
+      return await this.refreshAccessToken();
     } catch (error) {
-      console.error('Falha ao renovar token:', error);
+      console.error('Erro ao obter token válido:', error);
       return null;
     }
   }
 
-  // Método para verificar se precisa renovar o token em breve
   public shouldRefreshSoon(): boolean {
     if (!this.accessToken || !this.expiresAt) return false;
     
     // Renovar se restam menos de 10 minutos
-    const refreshThreshold = 10 * 60 * 1000; // 10 minutos em ms
-    return Date.now() > (this.expiresAt - refreshThreshold);
+    const bufferTime = 10 * 60 * 1000; // 10 minutos em ms
+    return Date.now() > (this.expiresAt - bufferTime);
   }
 
-  // Método para renovar proativamente o token
   public async refreshIfNeeded(): Promise<void> {
     if (this.shouldRefreshSoon() && this.refreshToken) {
       try {
         await this.refreshAccessToken();
       } catch (error) {
-        console.error('Erro na renovação proativa do token:', error);
+        console.error('Erro ao renovar token automaticamente:', error);
       }
     }
   }
 }
 
-// Instância singleton
-export const tokenService = new TokenService();
+// Criar uma instância singleton
+const tokenService = new TokenService();
+
+// Exportar como default para uso consistente
 export default tokenService; 

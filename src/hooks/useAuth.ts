@@ -1,4 +1,5 @@
 import { authService } from '@/services/api';
+import tokenService from '@/services/tokenService';
 import { useCallback, useEffect, useState } from 'react';
 
 interface AuthState {
@@ -62,11 +63,12 @@ export const useAuth = () => {
       return;
     }
 
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    
-    if (token && userStr) {
-      try {
+    try {
+      // Usar tokenService para verificação consistente
+      const hasValidToken = tokenService.hasValidToken();
+      const userStr = localStorage.getItem('user');
+      
+      if (hasValidToken && userStr) {
         const storedUser = JSON.parse(userStr);
         
         setState({
@@ -74,17 +76,29 @@ export const useAuth = () => {
           isLoading: false,
           isAuthenticated: true,
         });
-      } catch (error) {
-        console.error('Erro ao verificar autenticação:', error);
-        // Se der erro, limpar dados
-        authService.logout();
-        setState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-        });
+      } else {
+        // Tentar verificar tokens antigos para compatibilidade
+        const oldToken = localStorage.getItem('token');
+        if (oldToken && userStr) {
+          const storedUser = JSON.parse(userStr);
+          
+          setState({
+            user: storedUser,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+        } else {
+          setState({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+          });
+        }
       }
-    } else {
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+      // Se der erro, limpar dados
+      authService.logout();
       setState({
         user: null,
         isLoading: false,

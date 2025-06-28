@@ -1,5 +1,16 @@
 import axios from 'axios';
 
+// Função para obter token usando tokenService
+const getTokenService = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return require('./tokenService').default;
+  } catch (error) {
+    console.warn('TokenService não disponível:', error);
+    return null;
+  }
+};
+
 // Configuração base da API
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
@@ -9,15 +20,22 @@ const api = axios.create({
   },
 });
 
-// Função para obter token do localStorage
+// Função para obter token usando tokenService ou fallback
 const getToken = () => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  
+  const tokenService = getTokenService();
+  if (tokenService) {
+    return tokenService.getAccessToken();
+  }
+  
+  // Fallback para tokens antigos
+  return localStorage.getItem('token') || localStorage.getItem('accessToken');
 };
 
-// Interceptor simples para adicionar token
+// Interceptor para adicionar token nas requisições
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -27,22 +45,39 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor simples para tratar 401
+// Interceptor para tratar respostas e gerenciar token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Limpar dados e redirecionar para login
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Se é erro 401 e não é uma tentativa de retry
+    if (error.response?.status === 401 && !originalRequest._retry && getTokenService()) {
+      originalRequest._retry = true;
+
+      try {
+        // Tentar renovar o token
+        const newToken = await getTokenService().getValidAccessToken();
+        
+        if (newToken) {
+          // Retry da requisição original com novo token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Erro ao renovar token:', refreshError);
+      }
+
+      // Se chegou aqui, o refresh falhou - limpar tokens e redirecionar
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        getTokenService().clearTokens();
         
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
       }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -136,14 +171,17 @@ export interface TeacherResult {
   status: 'pending' | 'completed' | 'corrected';
 }
 
-// Serviços de autenticação
+// Serviços de autenticação atualizados
 export const authService = {
   async login(credentials: LoginCredentials) {
     const response = await api.post('/api/auth/login', credentials);
     const loginData = response.data;
     
-    // Salvar dados no localStorage
-    if (typeof window !== 'undefined') {
+    // Usar tokenService para salvar tokens de forma consistente
+    if (typeof window !== 'undefined' && getTokenService()) {
+      await getTokenService().setTokens(loginData);
+    } else {
+      // Fallback para compatibilidade
       localStorage.setItem('token', loginData.token);
       localStorage.setItem('refreshToken', loginData.refresh_token);
       localStorage.setItem('user', JSON.stringify(loginData.user));
@@ -161,8 +199,11 @@ export const authService = {
     const response = await api.post('/api/auth/register', userData);
     const loginData = response.data;
     
-    // Salvar dados no localStorage
-    if (typeof window !== 'undefined') {
+    // Usar tokenService para salvar tokens de forma consistente
+    if (typeof window !== 'undefined' && getTokenService()) {
+      await getTokenService().setTokens(loginData);
+    } else {
+      // Fallback para compatibilidade
       localStorage.setItem('token', loginData.token);
       localStorage.setItem('refreshToken', loginData.refresh_token);
       localStorage.setItem('user', JSON.stringify(loginData.user));
@@ -173,9 +214,16 @@ export const authService = {
 
   logout() {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      if (getTokenService()) {
+        getTokenService().clearTokens();
+      } else {
+        // Fallback para compatibilidade
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('tokenExpiresAt');
+        localStorage.removeItem('user');
+      }
     }
   },
 
@@ -195,6 +243,11 @@ export const authService = {
   },
 
   isTokenValid(): boolean {
+    if (typeof window === 'undefined') return false;
+    if (getTokenService()) {
+      return getTokenService().hasValidToken();
+    }
+    // Fallback
     return !!this.getToken();
   }
 };
