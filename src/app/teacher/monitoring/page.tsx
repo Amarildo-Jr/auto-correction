@@ -354,7 +354,7 @@ function TeacherMonitoringContent() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(alert.created_at).toLocaleString('pt-BR')}
+                      {alert.created_at ? new Date(alert.created_at).toLocaleString('pt-BR') : '-'}
                     </TableCell>
                     <TableCell>
                       <Button

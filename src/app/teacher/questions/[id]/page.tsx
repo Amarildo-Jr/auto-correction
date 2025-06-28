@@ -321,7 +321,7 @@ export default function QuestionDetailPage({ params }: { params: { id: string } 
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Criada em</Label>
                       <p className="mt-1 text-sm">
-                        {new Date(question.created_at).toLocaleDateString('pt-BR')}
+                        {question.created_at ? new Date(question.created_at).toLocaleDateString('pt-BR') : '-'}
                       </p>
                     </div>
                   )}

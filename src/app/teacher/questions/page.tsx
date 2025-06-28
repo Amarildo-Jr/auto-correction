@@ -200,7 +200,7 @@ export default function QuestionsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total de Questões</p>
-                <p className="text-2xl font-bold">{questions.length}</p>
+                <p className="text-2xl font-bold">{(questions || []).length}</p>
               </div>
               <BookOpen className="h-8 w-8 text-blue-600" />
             </div>
@@ -212,7 +212,7 @@ export default function QuestionsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Objetivas</p>
                 <p className="text-2xl font-bold">
-                  {questions.filter(q => q.type === "multiple_choice").length}
+                  {(questions || []).filter(q => q && q.type === "multiple_choice").length}
                 </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -227,7 +227,7 @@ export default function QuestionsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Subjetivas</p>
                 <p className="text-2xl font-bold">
-                  {questions.filter(q => q.type === "essay").length}
+                  {(questions || []).filter(q => q && q.type === "essay").length}
                 </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -369,7 +369,7 @@ export default function QuestionsPage() {
         <CardHeader>
           <CardTitle>
             Questões ({sortedQuestions.length}
-            {search && ` de ${questions.length}`})
+            {search && ` de ${(questions || []).length}`})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -436,20 +436,20 @@ export default function QuestionsPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-                          question.difficulty === 'hard' ? 'bg-red-100 text-red-800' :
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${(question.difficulty || 'medium') === 'easy' ? 'bg-green-100 text-green-800' :
+                          (question.difficulty || 'medium') === 'hard' ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
                           }`}>
-                          {question.difficulty === 'easy' ? 'Fácil' :
-                            question.difficulty === 'hard' ? 'Difícil' : 'Médio'}
+                          {(question.difficulty || 'medium') === 'easy' ? 'Fácil' :
+                            (question.difficulty || 'medium') === 'hard' ? 'Difícil' : 'Médio'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{question.points}</span>
+                        <span className="font-medium">{question.points || 0}</span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-gray-600">
-                          {new Date(question.created_at).toLocaleDateString('pt-BR')}
+                          {question.created_at ? new Date(question.created_at).toLocaleDateString('pt-BR') : '-'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
