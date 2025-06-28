@@ -36,28 +36,44 @@ export default function QuestionsPage() {
   const { questions, isLoading, error, deleteQuestion, addQuestionsToExam } = useQuestions();
   const { exams } = useExams();
 
-  const filteredQuestions = questions.filter((question: Question) => {
-    const textMatch = question.text.toLowerCase().includes(search.toLowerCase());
+  const filteredQuestions = (questions || []).filter((question: Question) => {
+    // Verificações de segurança
+    if (!question || typeof question !== 'object') return false;
+
+    const questionText = question.text || question.question_text || '';
+    const questionType = question.type || question.question_type || '';
+    const questionCategory = question.category || '';
+    const questionDifficulty = question.difficulty || '';
+
+    const textMatch = questionText.toLowerCase().includes(search.toLowerCase());
     const typeMatch = filters.type === "all" ||
-      (filters.type === "objetiva" && question.type === "multiple_choice") ||
-      (filters.type === "subjetiva" && question.type === "essay");
-    const categoryMatch = filters.category === "all" || question.category?.toLowerCase().includes(filters.category.toLowerCase());
-    const difficultyMatch = filters.difficulty === "all" || question.difficulty === filters.difficulty;
+      (filters.type === "objetiva" && questionType === "multiple_choice") ||
+      (filters.type === "subjetiva" && questionType === "essay");
+    const categoryMatch = filters.category === "all" || questionCategory.toLowerCase().includes(filters.category.toLowerCase());
+    const difficultyMatch = filters.difficulty === "all" || questionDifficulty === filters.difficulty;
 
     return textMatch && typeMatch && categoryMatch && difficultyMatch;
   });
 
-  // Ordenar questões
-  const sortedQuestions = [...filteredQuestions].sort((a, b) => {
+  // Ordenar questões com verificações de segurança
+  const sortedQuestions = [...(filteredQuestions || [])].sort((a, b) => {
+    if (!a || !b) return 0;
+
     switch (filters.sortBy) {
       case "mais_nova":
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
       case "mais_antiga":
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        const dateA2 = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB2 = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateA2 - dateB2;
       case "objetiva":
-        return a.type === "multiple_choice" ? -1 : 1;
+        const typeA = a.type || a.question_type || '';
+        return typeA === "multiple_choice" ? -1 : 1;
       case "subjetiva":
-        return a.type === "essay" ? -1 : 1;
+        const typeA2 = a.type || a.question_type || '';
+        return typeA2 === "essay" ? -1 : 1;
       default:
         return 0;
     }

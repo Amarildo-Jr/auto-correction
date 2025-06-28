@@ -28,11 +28,20 @@ export const useQuestions = () => {
     try {
       setIsLoading(true);
       setError(null);
+      
       const data = await questionService.getAll();
-      setQuestions(data);
+      
+      // Garantir que data é um array válido
+      if (Array.isArray(data)) {
+        setQuestions(data);
+      } else {
+        console.warn('API retornou dados inválidos para questões:', data);
+        setQuestions([]);
+      }
     } catch (err: any) {
       console.error('Erro ao buscar questões:', err);
       setError(err.response?.data?.message || 'Erro ao carregar questões');
+      setQuestions([]); // Garantir que questions seja sempre um array
     } finally {
       setIsLoading(false);
     }
@@ -45,8 +54,10 @@ export const useQuestions = () => {
   const createQuestion = useCallback(async (questionData: any) => {
     try {
       const newQuestion = await questionService.create(questionData);
-      setQuestions(prev => [...prev, newQuestion]);
-      return newQuestion;
+      if (newQuestion) {
+        setQuestions(prev => Array.isArray(prev) ? [...prev, newQuestion] : [newQuestion]);
+        return newQuestion;
+      }
     } catch (err: any) {
       console.error('Erro ao criar questão:', err);
       setError(err.response?.data?.message || 'Erro ao criar questão');
@@ -57,8 +68,14 @@ export const useQuestions = () => {
   const updateQuestion = useCallback(async (id: string, questionData: any) => {
     try {
       const updatedQuestion = await questionService.update(id, questionData);
-      setQuestions(prev => prev.map(question => question.id === parseInt(id) ? updatedQuestion : question));
-      return updatedQuestion;
+      if (updatedQuestion) {
+        setQuestions(prev => 
+          Array.isArray(prev) 
+            ? prev.map(question => question.id === parseInt(id) ? updatedQuestion : question)
+            : [updatedQuestion]
+        );
+        return updatedQuestion;
+      }
     } catch (err: any) {
       console.error('Erro ao atualizar questão:', err);
       setError(err.response?.data?.message || 'Erro ao atualizar questão');
@@ -69,7 +86,11 @@ export const useQuestions = () => {
   const deleteQuestion = useCallback(async (id: string) => {
     try {
       await questionService.delete(id);
-      setQuestions(prev => prev.filter(question => question.id !== parseInt(id)));
+      setQuestions(prev => 
+        Array.isArray(prev) 
+          ? prev.filter(question => question.id !== parseInt(id))
+          : []
+      );
     } catch (err: any) {
       console.error('Erro ao deletar questão:', err);
       setError(err.response?.data?.message || 'Erro ao deletar questão');
@@ -90,7 +111,7 @@ export const useQuestions = () => {
   }, []);
 
   return {
-    questions,
+    questions: Array.isArray(questions) ? questions : [], // Garantir que sempre seja um array
     isLoading,
     error,
     refetch: fetchQuestions,

@@ -152,21 +152,29 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     setValidationErrors(errors)
   }
 
-  // Filtrar questões
-  const filteredQuestions = questions.filter((question: Question) => {
-    const textMatch = question.text.toLowerCase().includes(questionSearch.toLowerCase())
-    const typeMatch = questionFilters.type === 'all' ||
-      (questionFilters.type === 'single_choice' && question.type === 'single_choice') ||
-      (questionFilters.type === 'multiple_choice' && question.type === 'multiple_choice') ||
-      (questionFilters.type === 'true_false' && question.type === 'true_false') ||
-      (questionFilters.type === 'essay' && question.type === 'essay')
-    const categoryMatch = questionFilters.category === 'all' ||
-      question.category?.toLowerCase().includes(questionFilters.category.toLowerCase())
-    const difficultyMatch = questionFilters.difficulty === 'all' ||
-      question.difficulty === questionFilters.difficulty
+  // Filtrar questões com verificações de segurança
+  const filteredQuestions = (questions || []).filter((question: Question) => {
+    // Verificações de segurança
+    if (!question || typeof question !== 'object') return false;
 
-    return textMatch && typeMatch && categoryMatch && difficultyMatch
-  })
+    const questionText = question.text || question.question_text || '';
+    const questionType = question.type || question.question_type || '';
+    const questionCategory = question.category || '';
+    const questionDifficulty = question.difficulty || '';
+
+    const textMatch = questionText.toLowerCase().includes(questionSearch.toLowerCase());
+    const typeMatch = questionFilters.type === 'all' ||
+      (questionFilters.type === 'single_choice' && questionType === 'single_choice') ||
+      (questionFilters.type === 'multiple_choice' && questionType === 'multiple_choice') ||
+      (questionFilters.type === 'true_false' && questionType === 'true_false') ||
+      (questionFilters.type === 'essay' && questionType === 'essay');
+    const categoryMatch = questionFilters.category === 'all' ||
+      questionCategory.toLowerCase().includes(questionFilters.category.toLowerCase());
+    const difficultyMatch = questionFilters.difficulty === 'all' ||
+      questionDifficulty === questionFilters.difficulty;
+
+    return textMatch && typeMatch && categoryMatch && difficultyMatch;
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
