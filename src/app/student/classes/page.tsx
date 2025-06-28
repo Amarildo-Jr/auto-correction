@@ -48,12 +48,7 @@ export default function StudentClassesPage() {
       setIsLoading(true)
       setError("")
 
-      const response = await api.get('/api/student/classes', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
+      const response = await api.get('/api/student/classes')
       setEnrolledClasses(response.data)
     } catch (err: any) {
       console.error('Erro ao carregar turmas matriculadas:', err)
@@ -68,12 +63,7 @@ export default function StudentClassesPage() {
       setIsLoading(true)
       setError("")
 
-      const response = await api.get('/api/student/available-classes', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
+      const response = await api.get('/api/student/available-classes')
       setAvailableClasses(response.data)
     } catch (err: any) {
       console.error('Erro ao carregar turmas disponíveis:', err)
@@ -85,11 +75,7 @@ export default function StudentClassesPage() {
 
   const handleRequestEnrollment = async (classId: number, className: string) => {
     try {
-      await api.post(`/api/classes/${classId}/request-enrollment`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      await api.post(`/api/classes/${classId}/request-enrollment`)
 
       alert(`Solicitação de participação enviada para a turma "${className}"`)
       loadAvailableClasses() // Atualizar lista

@@ -66,18 +66,10 @@ function StudentExamsContent() {
   const loadExams = async () => {
     try {
       setIsLoading(true);
-      setError("");
-
-      const response = await api.get('/api/student/exams', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
+      const response = await api.get('/api/student/exams');
       setExams(response.data);
-    } catch (err: any) {
-      console.error('Erro ao carregar provas:', err);
-      setError(err.response?.data?.error || 'Erro ao carregar provas');
+    } catch (error) {
+      console.error('Erro ao carregar provas:', error);
     } finally {
       setIsLoading(false);
     }

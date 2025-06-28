@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { useAppContext } from "@/contexts/AppContext"
 import { useExam } from "@/hooks/useExams"
-import { enrollmentService, examService } from "@/services/api"
+import api, { enrollmentService, examService } from "@/services/api"
 import { AlertCircle, Clock, FileText, Send, Timer } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -52,54 +52,47 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
       if (!exam?.id) return
 
       try {
-        const response = await fetch(`http://localhost:5000/api/exams/${exam.id}/enrollment-status`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        })
+        const response = await api.get(`/api/exams/${exam.id}/enrollment-status`)
+        const status = response.data
+        setEnrollmentStatus(status)
 
-        if (response.ok) {
-          const status = await response.json()
-          setEnrollmentStatus(status)
+        // Se já está em andamento, configurar para continuar
+        if (status.status === 'in_progress') {
+          setIsStarted(true)
+          setEnrollmentId(status.id)
 
-          // Se já está em andamento, configurar para continuar
-          if (status.status === 'in_progress') {
-            setIsStarted(true)
-            setEnrollmentId(status.id)
+          // Calcular tempo restante
+          const startTime = new Date(status.start_time)
+          const now = new Date()
+          const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60))
+          const remainingMinutes = Math.max(0, exam.duration - elapsedMinutes)
+          setTimeRemaining(remainingMinutes * 60)
 
-            // Calcular tempo restante
-            const startTime = new Date(status.start_time)
-            const now = new Date()
-            const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60))
-            const remainingMinutes = Math.max(0, exam.duration - elapsedMinutes)
-            setTimeRemaining(remainingMinutes * 60)
-
-            // Carregar respostas existentes
-            if (status.existing_answers) {
-              const existingAnswersMap = new Map()
-              status.existing_answers.forEach((answer: any) => {
-                existingAnswersMap.set(answer.question_id, {
-                  question_id: answer.question_id,
-                  answer_text: answer.answer_text || '',
-                  selected_alternatives: answer.selected_alternatives || []
-                })
+          // Carregar respostas existentes
+          if (status.existing_answers) {
+            const existingAnswersMap = new Map()
+            status.existing_answers.forEach((answer: any) => {
+              existingAnswersMap.set(answer.question_id, {
+                question_id: answer.question_id,
+                answer_text: answer.answer_text || '',
+                selected_alternatives: answer.selected_alternatives || []
               })
+            })
 
-              // Inicializar todas as respostas
-              if (examWithQuestions?.questions) {
-                const allAnswers: Answer[] = examWithQuestions.questions.map((question: any) => {
-                  return existingAnswersMap.get(question.id) || {
-                    question_id: question.id,
-                    answer_text: '',
-                    selected_alternatives: []
-                  }
-                })
-                setAnswers(allAnswers)
-              }
+            // Inicializar todas as respostas
+            if (examWithQuestions?.questions) {
+              const allAnswers: Answer[] = examWithQuestions.questions.map((question: any) => {
+                return existingAnswersMap.get(question.id) || {
+                  question_id: question.id,
+                  answer_text: '',
+                  selected_alternatives: []
+                }
+              })
+              setAnswers(allAnswers)
             }
-          } else if (status.status === 'completed') {
-            setIsFinished(true)
           }
+        } else if (status.status === 'completed') {
+          setIsFinished(true)
         }
       } catch (err) {
         console.error('Erro ao verificar status:', err)

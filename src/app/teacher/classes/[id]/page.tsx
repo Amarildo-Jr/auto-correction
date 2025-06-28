@@ -88,11 +88,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
   const loadClassData = async () => {
     try {
       setIsLoading(true)
-      const response = await api.get(`/api/classes/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await api.get(`/api/classes/${params.id}`)
       setClassData(response.data)
       setEditForm({
         name: response.data.name,
@@ -100,8 +96,8 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
         schedule: response.data.schedule,
         is_active: response.data.is_active
       })
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao carregar turma')
+    } catch (error) {
+      console.error('Erro ao carregar dados da turma:', error)
     } finally {
       setIsLoading(false)
     }
@@ -109,27 +105,19 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
 
   const loadStudents = async () => {
     try {
-      const response = await api.get(`/api/classes/${params.id}/students`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await api.get(`/api/classes/${params.id}/students`)
       setStudents(response.data)
-    } catch (err: any) {
-      console.error('Erro ao carregar estudantes:', err)
+    } catch (error) {
+      console.error('Erro ao carregar alunos:', error)
     }
   }
 
   const loadExams = async () => {
     try {
-      const response = await api.get(`/api/classes/${params.id}/exams`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await api.get(`/api/classes/${params.id}/exams`)
       setExams(response.data)
-    } catch (err: any) {
-      console.error('Erro ao carregar provas:', err)
+    } catch (error) {
+      console.error('Erro ao carregar provas:', error)
     }
   }
 
@@ -137,12 +125,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
     e.preventDefault()
 
     try {
-      await api.put(`/api/classes/${params.id}`, editForm, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
+      await api.put(`/api/classes/${params.id}`, editForm)
       setShowEditDialog(false)
       loadClassData()
     } catch (err: any) {
@@ -154,18 +137,13 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
     e.preventDefault()
 
     try {
-      await api.post('/api/exams', {
+      const response = await api.post('/api/exams', {
         ...newExam,
         class_id: parseInt(params.id),
         start_time: new Date(newExam.start_time).toISOString(),
         end_time: new Date(newExam.end_time).toISOString()
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
       })
-
-      setShowCreateExamDialog(false)
+      setExams(prev => [...prev, response.data])
       setNewExam({
         title: '',
         description: '',
@@ -173,7 +151,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
         start_time: '',
         end_time: ''
       })
-      loadExams()
+      setShowCreateExamDialog(false)
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao criar prova')
     }
@@ -183,12 +161,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
     if (!confirm('Tem certeza que deseja remover este estudante da turma?')) return
 
     try {
-      await api.delete(`/api/classes/${params.id}/students/${studentId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
+      await api.delete(`/api/classes/${params.id}/students/${studentId}`)
       loadStudents()
       loadClassData()
     } catch (err: any) {

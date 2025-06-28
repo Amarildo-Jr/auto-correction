@@ -82,11 +82,7 @@ function TeacherClassesContent() {
       setIsLoading(true)
       setError('')
 
-      const response = await api.get('/api/classes', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await api.get('/api/classes')
 
       setClasses(response.data)
     } catch (err: any) {
@@ -102,11 +98,7 @@ function TeacherClassesContent() {
     try {
       setIsLoadingRequests(true)
 
-      const response = await api.get(`/api/classes/${classId}/enrollment-requests`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await api.get(`/api/classes/${classId}/enrollment-requests`)
 
       setEnrollmentRequests(response.data)
     } catch (err: any) {
@@ -123,11 +115,7 @@ function TeacherClassesContent() {
     try {
       setError('')
 
-      const response = await api.post('/api/classes', newClass, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      const response = await api.post('/api/classes', newClass)
 
       setClasses(prev => [...prev, response.data])
       setNewClass({ name: '', description: '', schedule: '', is_active: true })
@@ -141,11 +129,7 @@ function TeacherClassesContent() {
   // Aprovar solicitação
   const handleApproveRequest = async (classId: number, enrollmentId: number) => {
     try {
-      await api.post(`/api/classes/${classId}/approve-enrollment/${enrollmentId}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      await api.post(`/api/classes/${classId}/approve-enrollment/${enrollmentId}`, {})
 
       // Recarregar solicitações
       loadEnrollmentRequests(classId)
@@ -159,11 +143,7 @@ function TeacherClassesContent() {
   // Rejeitar solicitação
   const handleRejectRequest = async (classId: number, enrollmentId: number) => {
     try {
-      await api.post(`/api/classes/${classId}/reject-enrollment/${enrollmentId}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      await api.post(`/api/classes/${classId}/reject-enrollment/${enrollmentId}`, {})
 
       // Recarregar solicitações
       loadEnrollmentRequests(classId)
@@ -177,11 +157,7 @@ function TeacherClassesContent() {
   // Aprovar todas as solicitações
   const handleApproveAll = async (classId: number) => {
     try {
-      await api.post(`/api/classes/${classId}/approve-all-enrollments`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      await api.post(`/api/classes/${classId}/approve-all-enrollments`, {})
 
       // Recarregar solicitações
       loadEnrollmentRequests(classId)

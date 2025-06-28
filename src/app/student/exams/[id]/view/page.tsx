@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAppContext } from "@/contexts/AppContext"
 import { useExam } from "@/hooks/useExams"
+import api from "@/services/api"
 import { ArrowLeft, Calendar, CheckCircle, Clock, FileText, Play, Timer, Users, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -47,18 +48,10 @@ export default function ViewExamPage({ params }: { params: { id: string } }) {
   const loadExamResult = async () => {
     try {
       setIsLoadingResult(true)
-      const response = await fetch(`/api/exams/${params.id}/result`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setResult(data)
-      }
-    } catch (err: any) {
-      console.error('Erro ao carregar resultado:', err)
+      const response = await api.get(`/api/exams/${params.id}/result`)
+      setResult(response.data)
+    } catch (error) {
+      console.error('Erro ao carregar resultado:', error)
     } finally {
       setIsLoadingResult(false)
     }

@@ -66,12 +66,7 @@ export default function QuestionDetailPage({ params }: { params: { id: string } 
   const loadQuestion = async () => {
     try {
       setIsLoading(true)
-      const response = await api.get(`/api/questions/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
+      const response = await api.get(`/api/questions/${params.id}`)
       setQuestion(response.data)
       setEditForm({
         question_text: response.data.question_text,
@@ -82,48 +77,36 @@ export default function QuestionDetailPage({ params }: { params: { id: string } 
         is_public: response.data.is_public ?? true,
         alternatives: response.data.alternatives || []
       })
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao carregar questão')
+    } catch (error) {
+      console.error('Erro ao carregar questão:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleSave = async () => {
+    if (!question) return
+
     try {
       setIsSaving(true)
-      setError('')
-
-      await api.put(`/api/questions/${params.id}`, editForm, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      await api.put(`/api/questions/${params.id}`, question)
 
       setIsEditing(false)
-      loadQuestion()
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao salvar questão')
+    } catch (error) {
+      console.error('Erro ao salvar questão:', error)
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir esta questão? Esta ação não pode ser desfeita.')) {
-      return
-    }
+    if (!question) return
 
     try {
-      await api.delete(`/api/questions/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
+      await api.delete(`/api/questions/${params.id}`)
       router.push('/teacher/questions')
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao excluir questão')
+    } catch (error) {
+      console.error('Erro ao deletar questão:', error)
     }
   }
 
