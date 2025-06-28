@@ -36,18 +36,12 @@ api.interceptors.response.use(
               { refresh_token: refreshToken }
             );
 
-            const { token, refresh_token, user, expires_in } = response.data;
+            const { token, refresh_token, user } = response.data;
             
             // Salvar novos tokens
             localStorage.setItem('token', token);
             localStorage.setItem('refreshToken', refresh_token);
             localStorage.setItem('user', JSON.stringify(user));
-            
-            // Atualizar cookies
-            const expiryDate = new Date(Date.now() + (expires_in * 1000));
-            document.cookie = `token=${token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
-            document.cookie = `userRole=${user.role}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
-            document.cookie = `refreshToken=${refresh_token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
             
             // Refazer a requisição original com o novo token
             originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -59,9 +53,6 @@ api.interceptors.response.use(
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
-            document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-            document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-            document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
             
             if (!window.location.pathname.includes('/login')) {
               window.location.href = '/login';
@@ -79,9 +70,6 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
@@ -181,17 +169,11 @@ export const authService = {
     const response = await api.post('/api/auth/login', credentials);
     const loginData = response.data;
     
-    // Salvar dados no localStorage e cookies de forma simples
+    // Salvar dados apenas no localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', loginData.token);
       localStorage.setItem('refreshToken', loginData.refresh_token);
       localStorage.setItem('user', JSON.stringify(loginData.user));
-      
-      // Salvar em cookies para o middleware
-      const expiryDate = new Date(Date.now() + (loginData.expires_in * 1000));
-      document.cookie = `token=${loginData.token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
-      document.cookie = `userRole=${loginData.user.role}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
-      document.cookie = `refreshToken=${loginData.refresh_token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
     }
     
     return { token: loginData.token, user: loginData.user };
@@ -206,17 +188,11 @@ export const authService = {
     const response = await api.post('/api/auth/register', userData);
     const loginData = response.data;
     
-    // Salvar dados no localStorage e cookies
+    // Salvar dados apenas no localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', loginData.token);
       localStorage.setItem('refreshToken', loginData.refresh_token);
       localStorage.setItem('user', JSON.stringify(loginData.user));
-      
-      // Salvar em cookies para o middleware
-      const expiryDate = new Date(Date.now() + (loginData.expires_in * 1000));
-      document.cookie = `token=${loginData.token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
-      document.cookie = `userRole=${loginData.user.role}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
-      document.cookie = `refreshToken=${loginData.refresh_token}; path=/; expires=${expiryDate.toUTCString()}; samesite=lax`;
     }
     
     return { token: loginData.token, user: loginData.user };
@@ -227,11 +203,6 @@ export const authService = {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      
-      // Limpar cookies
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
   },
 

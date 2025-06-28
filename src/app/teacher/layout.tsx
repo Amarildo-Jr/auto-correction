@@ -4,13 +4,63 @@ import { AdminProtection } from '@/components/AdminProtection';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { TeacherSidebar } from '@/components/teacher/TeacherSidebar';
 import { useAppContext } from '@/contexts/AppContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function TeacherLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAppContext();
+  const { isAuthenticated, user, isLoading } = useAppContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    console.log('TeacherLayout - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+
+    if (!isLoading) {
+      if (!isAuthenticated || !user) {
+        console.log('Redirecionando para login - não autenticado');
+        router.push('/login');
+        return;
+      }
+
+      // Verificar se tem permissão (professor ou admin)
+      if (user.role !== 'professor' && user.role !== 'admin') {
+        console.log('Redirecionando - role não permitido:', user.role);
+        if (user.role === 'student') {
+          router.push('/student/dashboard');
+        } else {
+          router.push('/login');
+        }
+        return;
+      }
+    }
+  }, [isAuthenticated, isLoading, user, router]);
+
+  // Mostrar loading enquanto verifica
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não está autenticado ou não tem permissão, mostrar loading
+  if (!isAuthenticated || !user || (user.role !== 'professor' && user.role !== 'admin')) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p>Verificando permissões...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AdminProtection allowedRoles={['admin', 'professor']}>
