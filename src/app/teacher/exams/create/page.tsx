@@ -631,7 +631,7 @@ function CreateExamContent() {
                             </TableCell>
                             <TableCell>
                               <div className="font-medium">
-                                {truncarTexto(question.text, 100)}
+                                {truncarTexto(question.text || question.question_text || '', 100)}
                               </div>
                               {question.category && (
                                 <div className="text-sm text-gray-500">

@@ -47,7 +47,7 @@ export default function QuestionsPage() {
 
     const textMatch = questionText.toLowerCase().includes(search.toLowerCase());
     const typeMatch = filters.type === "all" ||
-      (filters.type === "objetiva" && questionType === "multiple_choice") ||
+      (filters.type === "objetiva" && (questionType === "multiple_choice" || questionType === "single_choice" || questionType === "true_false")) ||
       (filters.type === "subjetiva" && questionType === "essay");
     const categoryMatch = filters.category === "all" || questionCategory.toLowerCase().includes(filters.category.toLowerCase());
     const difficultyMatch = filters.difficulty === "all" || questionDifficulty === filters.difficulty;
@@ -70,7 +70,7 @@ export default function QuestionsPage() {
         return dateA2 - dateB2;
       case "objetiva":
         const typeA = a.type || a.question_type || '';
-        return typeA === "multiple_choice" ? -1 : 1;
+        return (typeA === "multiple_choice" || typeA === "single_choice" || typeA === "true_false") ? -1 : 1;
       case "subjetiva":
         const typeA2 = a.type || a.question_type || '';
         return typeA2 === "essay" ? -1 : 1;
@@ -212,7 +212,7 @@ export default function QuestionsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Objetivas</p>
                 <p className="text-2xl font-bold">
-                  {(questions || []).filter(q => q && q.type === "multiple_choice").length}
+                  {(questions || []).filter(q => q && (q.type === "multiple_choice" || q.type === "single_choice" || q.type === "true_false")).length}
                 </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -423,11 +423,11 @@ export default function QuestionsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.type === 'multiple_choice'
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${(question.type === 'multiple_choice' || question.type === 'single_choice' || question.type === 'true_false')
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                           }`}>
-                          {question.type === 'multiple_choice' ? 'Objetiva' : 'Subjetiva'}
+                          {(question.type === 'multiple_choice' || question.type === 'single_choice' || question.type === 'true_false') ? 'Objetiva' : 'Subjetiva'}
                         </span>
                       </TableCell>
                       <TableCell>
