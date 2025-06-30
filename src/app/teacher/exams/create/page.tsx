@@ -44,6 +44,7 @@ function CreateExamContent() {
   })
 
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([])
+  const [questionPoints, setQuestionPoints] = useState<Record<number, number>>({})
   const [questionSearch, setQuestionSearch] = useState('')
   const [questionFilters, setQuestionFilters] = useState({
     type: 'all',
@@ -178,7 +179,8 @@ function CreateExamContent() {
       const examData = {
         ...formData,
         class_id: parseInt(formData.class_id),
-        questions: selectedQuestions
+        questions: selectedQuestions,
+        question_points: questionPoints
       }
 
       const result = await createExam(examData)
@@ -217,19 +219,56 @@ function CreateExamContent() {
   }
 
   const handleSelectQuestion = (questionId: number) => {
-    setSelectedQuestions(prev =>
-      prev.includes(questionId)
-        ? prev.filter(id => id !== questionId)
-        : [...prev, questionId]
-    )
+    setSelectedQuestions(prev => {
+      const isSelected = prev.includes(questionId)
+      if (isSelected) {
+        // Remover questão e sua pontuação personalizada
+        setQuestionPoints(prevPoints => {
+          const newPoints = { ...prevPoints }
+          delete newPoints[questionId]
+          return newPoints
+        })
+        return prev.filter(id => id !== questionId)
+      } else {
+        // Adicionar questão e definir pontuação padrão
+        const question = questions.find(q => q.id === questionId)
+        if (question) {
+          setQuestionPoints(prevPoints => ({
+            ...prevPoints,
+            [questionId]: question.points
+          }))
+        }
+        return [...prev, questionId]
+      }
+    })
   }
 
   const handleSelectAllQuestions = () => {
     if (selectedQuestions.length === filteredQuestions.length) {
       setSelectedQuestions([])
+      setQuestionPoints({})
     } else {
-      setSelectedQuestions(filteredQuestions.map(q => q.id))
+      const questionIds = filteredQuestions.map(q => q.id)
+      setSelectedQuestions(questionIds)
+
+      // Definir pontuações padrão para todas as questões selecionadas
+      const pointsMap: Record<number, number> = {}
+      filteredQuestions.forEach(question => {
+        pointsMap[question.id] = question.points
+      })
+      setQuestionPoints(pointsMap)
     }
+  }
+
+  const handleQuestionPointsChange = (questionId: number, points: number) => {
+    setQuestionPoints(prev => ({
+      ...prev,
+      [questionId]: points
+    }))
+  }
+
+  const getQuestionPoints = (questionId: number, defaultPoints: number) => {
+    return questionPoints[questionId] ?? defaultPoints
   }
 
   const truncarTexto = (texto: string, tamanhoMaximo: number) => {
@@ -242,7 +281,8 @@ function CreateExamContent() {
 
   const totalPoints = selectedQuestions.reduce((total, id) => {
     const question = questions.find(q => q.id === id)
-    return total + (question?.points || 0)
+    const points = getQuestionPoints(id, question?.points || 0)
+    return total + points
   }, 0)
 
   // Estatísticas das questões selecionadas
@@ -614,7 +654,8 @@ function CreateExamContent() {
                           <TableHead>Questão</TableHead>
                           <TableHead>Tipo</TableHead>
                           <TableHead>Dificuldade</TableHead>
-                          <TableHead>Pontos</TableHead>
+                          <TableHead>Pontos Padrão</TableHead>
+                          <TableHead>Pontos na Prova</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -661,6 +702,20 @@ function CreateExamContent() {
                             </TableCell>
                             <TableCell>
                               <span className="font-medium">{question.points}</span>
+                            </TableCell>
+                            <TableCell>
+                              {selectedQuestions.includes(question.id) ? (
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  value={getQuestionPoints(question.id, question.points)}
+                                  onChange={(e) => handleQuestionPointsChange(question.id, parseFloat(e.target.value) || 0)}
+                                  className="w-20"
+                                />
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
