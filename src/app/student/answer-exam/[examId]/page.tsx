@@ -27,7 +27,7 @@ interface AnswerExamPageProps {
 interface Question {
   id: number
   question_text: string
-  question_type: 'multiple_choice' | 'essay'
+  question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer' | 'essay'
   points: number
   order_number: number
   alternatives?: {

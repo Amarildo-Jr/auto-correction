@@ -41,7 +41,7 @@ export default function QuestionsPage() {
     if (!question || typeof question !== 'object') return false;
 
     const questionText = question.text || question.question_text || '';
-    const questionType = question.type || question.question_type || '';
+    const questionType = question.question_type || question.type || '';
     const questionCategory = question.category || '';
     const questionDifficulty = question.difficulty || '';
 
@@ -69,10 +69,10 @@ export default function QuestionsPage() {
         const dateB2 = b.created_at ? new Date(b.created_at).getTime() : 0;
         return dateA2 - dateB2;
       case "objetiva":
-        const typeA = a.type || a.question_type || '';
+        const typeA = a.question_type || a.type || '';
         return (typeA === "multiple_choice" || typeA === "single_choice" || typeA === "true_false") ? -1 : 1;
       case "subjetiva":
-        const typeA2 = a.type || a.question_type || '';
+        const typeA2 = a.question_type || a.type || '';
         return typeA2 === "essay" ? -1 : 1;
       default:
         return 0;
@@ -212,7 +212,7 @@ export default function QuestionsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Objetivas</p>
                 <p className="text-2xl font-bold">
-                  {(questions || []).filter(q => q && (q.type === "multiple_choice" || q.type === "single_choice" || q.type === "true_false")).length}
+                  {(questions || []).filter(q => q && (q.question_type === "multiple_choice" || q.question_type === "single_choice" || q.question_type === "true_false")).length}
                 </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -227,7 +227,7 @@ export default function QuestionsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Subjetivas</p>
                 <p className="text-2xl font-bold">
-                  {(questions || []).filter(q => q && q.type === "essay").length}
+                  {(questions || []).filter(q => q && q.question_type === "essay").length}
                 </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -423,11 +423,11 @@ export default function QuestionsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${(question.type === 'multiple_choice' || question.type === 'single_choice' || question.type === 'true_false')
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${(question.question_type === 'multiple_choice' || question.question_type === 'single_choice' || question.question_type === 'true_false')
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                           }`}>
-                          {(question.type === 'multiple_choice' || question.type === 'single_choice' || question.type === 'true_false') ? 'Objetiva' : 'Subjetiva'}
+                          {(question.question_type === 'multiple_choice' || question.question_type === 'single_choice' || question.question_type === 'true_false') ? 'Objetiva' : 'Subjetiva'}
                         </span>
                       </TableCell>
                       <TableCell>

@@ -158,7 +158,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     if (!question || typeof question !== 'object') return false;
 
     const questionText = question.text || question.question_text || '';
-    const questionType = question.type || question.question_type || '';
+    const questionType = question.question_type || question.type || '';
     const questionCategory = question.category || '';
     const questionDifficulty = question.difficulty || '';
 
@@ -307,7 +307,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     selectedQuestions.forEach(id => {
       const question = questions.find(q => q.id === id)
       if (question) {
-        stats[question.type as keyof typeof stats]++
+        stats[question.question_type as keyof typeof stats]++
       }
     })
 
@@ -513,14 +513,14 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
-                                question.type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
-                                  question.type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
+                                question.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
+                                  question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-orange-100 text-orange-800'
                                 }`}>
-                                {question.type === 'single_choice' ? 'Única' :
-                                  question.type === 'multiple_choice' ? 'Múltipla' :
-                                    question.type === 'true_false' ? 'V/F' : 'Dissertativa'}
+                                {question.question_type === 'single_choice' ? 'Única' :
+                                  question.question_type === 'multiple_choice' ? 'Múltipla' :
+                                    question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
                               </span>
                             </TableCell>
                             <TableCell>
@@ -700,14 +700,14 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
-                            question.type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
-                              question.type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
+                            question.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
+                              question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-orange-100 text-orange-800'
                             }`}>
-                            {question.type === 'single_choice' ? 'Única' :
-                              question.type === 'multiple_choice' ? 'Múltipla' :
-                                question.type === 'true_false' ? 'V/F' : 'Dissertativa'}
+                            {question.question_type === 'single_choice' ? 'Única' :
+                              question.question_type === 'multiple_choice' ? 'Múltipla' :
+                                question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
                           </span>
                         </TableCell>
                         <TableCell>

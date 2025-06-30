@@ -218,11 +218,11 @@ export const authService = {
         getTokenService().clearTokens();
       } else {
         // Fallback para compatibilidade
-        localStorage.removeItem('token');
+      localStorage.removeItem('token');
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+      localStorage.removeItem('refreshToken');
         localStorage.removeItem('tokenExpiresAt');
-        localStorage.removeItem('user');
+      localStorage.removeItem('user');
       }
     }
   },

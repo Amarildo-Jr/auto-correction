@@ -8,7 +8,7 @@ export interface Question {
   exam_id: number;
   question_text: string;
   text: string; // alias para question_text
-  question_type: 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
+  question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
   type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer' | 'essay'; // alias para question_type
   category?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
