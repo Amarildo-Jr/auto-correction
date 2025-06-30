@@ -183,22 +183,14 @@ function CreateExamContent() {
         question_points: questionPoints
       }
 
-      console.log('📊 DADOS ENVIADOS PARA CRIAR PROVA:', examData)
-      console.log('⏱️ Duração enviada:', examData.duration_minutes)
-      console.log('🕐 Horário início:', examData.start_time)
-      console.log('🕑 Horário fim:', examData.end_time)
-
       const result = await createExam(examData)
-      console.log('✅ RESULTADO DA CRIAÇÃO:', result)
-
       if (result && result.id) {
         router.push('/teacher/exams')
       } else {
         setError('Erro ao criar prova - resposta inválida do servidor')
       }
     } catch (err: any) {
-      console.error('❌ ERRO AO CRIAR PROVA:', err)
-      console.error('📄 Response data:', err.response?.data)
+      console.error('Erro ao criar prova:', err)
       setError(err.response?.data?.error || err.message || 'Erro inesperado ao criar prova')
     } finally {
       setIsLoading(false)
@@ -508,22 +500,6 @@ function CreateExamContent() {
                         </div>
                         <div>
                           <span className="text-blue-700">Fim:</span> {new Date(formData.end_time).toLocaleString('pt-BR')}
-                        </div>
-                      </div>
-
-                      {/* DEBUG: Mostrar informações detalhadas */}
-                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                        <h5 className="font-bold text-yellow-800 mb-2">🐛 DEBUG - Dados que serão enviados:</h5>
-                        <div className="space-y-1 text-yellow-700">
-                          <div><strong>duration_minutes:</strong> {formData.duration_minutes} (tipo: {typeof formData.duration_minutes})</div>
-                          <div><strong>start_time:</strong> {formData.start_time}</div>
-                          <div><strong>end_time:</strong> {formData.end_time}</div>
-                          <div><strong>class_id:</strong> {formData.class_id} (tipo: {typeof formData.class_id})</div>
-                          <div><strong>Diferença em minutos:</strong> {
-                            formData.start_time && formData.end_time
-                              ? Math.round((new Date(formData.end_time).getTime() - new Date(formData.start_time).getTime()) / (1000 * 60))
-                              : 'N/A'
-                          }</div>
                         </div>
                       </div>
                     </CardContent>
