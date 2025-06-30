@@ -423,11 +423,14 @@ export default function QuestionsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${(question.question_type === 'multiple_choice' || question.question_type === 'single_choice' || question.question_type === 'true_false')
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
+                          question.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
+                            question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-orange-100 text-orange-800'
                           }`}>
-                          {(question.question_type === 'multiple_choice' || question.question_type === 'single_choice' || question.question_type === 'true_false') ? 'Objetiva' : 'Subjetiva'}
+                          {question.question_type === 'single_choice' ? 'Objetiva' :
+                            question.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
+                              question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
                         </span>
                       </TableCell>
                       <TableCell>
