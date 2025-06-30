@@ -3,16 +3,14 @@
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useAppContext } from "@/contexts/AppContext"
 import { useClasses } from "@/hooks/useClasses"
 import { useExams } from "@/hooks/useExams"
 import { Question, useQuestions } from "@/hooks/useQuestions"
-import { AlertCircle, ArrowLeft, BookOpen, FileText, Plus, Save, Search } from "lucide-react"
+import { AlertCircle, ArrowLeft, FileText, Save } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -34,9 +32,8 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
   })
 
   const [originalStatus, setOriginalStatus] = useState<'draft' | 'published'>('draft')
-
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([])
-  const [questionPoints, setQuestionPoints] = useState<Record<number, number>>({})
+  const [questionPoints, setQuestionPoints] = useState<Record<number, string | number>>({})
   const [questionSearch, setQuestionSearch] = useState('')
   const [questionFilters, setQuestionFilters] = useState({
     type: 'all',
@@ -57,7 +54,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
         const exam = await getExam(params.id)
 
         if (exam) {
-          // Função auxiliar para converter data UTC para formato local do input datetime-local
           const formatDateTimeLocal = (dateString: string) => {
             const date = new Date(dateString);
             const year = date.getFullYear();
@@ -78,13 +74,11 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
             status: exam.status || 'draft',
           })
 
-          // Salvar status original para controle de edição
           setOriginalStatus(exam.status || 'draft')
 
-          // Carregar questões da prova e suas pontuações
           if (exam.questions) {
             const questionIds = exam.questions.map((q: any) => q.id)
-            const questionPointsMap: Record<number, number> = {}
+            const questionPointsMap: Record<number, string | number> = {}
 
             exam.questions.forEach((q: any) => {
               questionPointsMap[q.id] = q.points
@@ -105,7 +99,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     loadExam()
   }, [params.id, getExam])
 
-  // Verificar autorização
   if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'professor')) {
     router.push('/login')
     return null
@@ -115,7 +108,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     return <LoadingSpinner />
   }
 
-  // Validação em tempo real
   const validateField = (name: string, value: any) => {
     const errors: Record<string, string> = { ...validationErrors }
 
@@ -150,7 +142,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
           errors.start_time = 'Data de início é obrigatória'
         } else {
           delete errors.start_time
-          // Validar também end_time se já estiver preenchido
           if (formData.end_time && new Date(value) >= new Date(formData.end_time)) {
             errors.end_time = 'Data de fim deve ser posterior ao início'
           }
@@ -177,9 +168,147 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     setValidationErrors(errors)
   }
 
-  // Filtrar questões com verificações de segurança
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    if (!formData.title.trim() || !formData.class_id || !formData.start_time || !formData.end_time) {
+      setError('Por favor, preencha todos os campos obrigatórios')
+      setIsLoading(false)
+      return
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setError('Por favor, corrija os erros nos campos')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const examData: any = {
+        ...formData,
+        class_id: parseInt(formData.class_id),
+      }
+
+      if (canEditQuestions) {
+        examData.questions = selectedQuestions
+        examData.question_points = questionPoints
+      }
+
+      await updateExam(params.id, examData)
+      router.push('/teacher/exams')
+    } catch (err: any) {
+      console.error('Erro ao atualizar prova:', err)
+      setError(err.response?.data?.error || err.message || 'Erro inesperado ao atualizar prova')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    validateField(name, value)
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }))
+    validateField(name, value)
+  }
+
+  const handleSelectQuestion = (questionId: number) => {
+    setSelectedQuestions(prev => {
+      if (prev.includes(questionId)) {
+        const newQuestionPoints = { ...questionPoints }
+        delete newQuestionPoints[questionId]
+        setQuestionPoints(newQuestionPoints)
+        return prev.filter(id => id !== questionId)
+      } else {
+        const question = questions.find(q => q.id === questionId)
+        if (question) {
+          setQuestionPoints(prev => ({
+            ...prev,
+            [questionId]: question.points
+          }))
+        }
+        return [...prev, questionId]
+      }
+    })
+  }
+
+  const handleSelectAllQuestions = () => {
+    if (filteredQuestions.length > 0 && filteredQuestions.every(q => selectedQuestions.includes(q.id))) {
+      const questionsToRemove = filteredQuestions.map(q => q.id)
+      setSelectedQuestions(prev => prev.filter(id => !questionsToRemove.includes(id)))
+      const newQuestionPoints = { ...questionPoints }
+      questionsToRemove.forEach(id => delete newQuestionPoints[id])
+      setQuestionPoints(newQuestionPoints)
+    } else {
+      const questionsToAdd = filteredQuestions.filter(q => !selectedQuestions.includes(q.id))
+      setSelectedQuestions(prev => [...prev, ...questionsToAdd.map(q => q.id)])
+      const newQuestionPoints = { ...questionPoints }
+      questionsToAdd.forEach(q => {
+        newQuestionPoints[q.id] = q.points
+      })
+      setQuestionPoints(newQuestionPoints)
+    }
+  }
+
+  const handleQuestionPointsChange = (questionId: number, value: string) => {
+    const cleanValue = value.replace(/[^\\d.,]/g, '').replace(',', '.')
+
+    if (cleanValue === '' || cleanValue === '.') {
+      setQuestionPoints(prev => ({
+        ...prev,
+        [questionId]: ''
+      }))
+      return
+    }
+
+    const numericValue = parseFloat(cleanValue)
+
+    if (!isNaN(numericValue) && numericValue >= 0) {
+      setQuestionPoints(prev => ({
+        ...prev,
+        [questionId]: numericValue
+      }))
+    }
+  }
+
+  const getQuestionPoints = (questionId: number, defaultPoints: number): string => {
+    const points = questionPoints[questionId]
+    if (points === '' || points === undefined || points === null) {
+      return ''
+    }
+    return typeof points === 'number' ? points.toString() : points
+  }
+
+  const truncarTexto = (texto: string, tamanhoMaximo: number) => {
+    if (!texto) return ''
+    if (texto.length <= tamanhoMaximo) return texto
+    return texto.substr(0, tamanhoMaximo) + '...'
+  }
+
+  const getQuestionStats = () => {
+    const stats = {
+      single_choice: 0,
+      multiple_choice: 0,
+      true_false: 0,
+      essay: 0
+    }
+
+    selectedQuestions.forEach(id => {
+      const question = questions.find(q => q.id === id)
+      if (question) {
+        stats[question.question_type as keyof typeof stats]++
+      }
+    })
+
+    return stats
+  }
+
   const filteredQuestions = (questions || []).filter((question: Question) => {
-    // Verificações de segurança
     if (!question || typeof question !== 'object') return false;
 
     const questionText = question.text || question.question_text || '';
@@ -201,148 +330,26 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     return textMatch && typeMatch && categoryMatch && difficultyMatch;
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
-
-    // Validação final
-    if (!formData.title.trim() || !formData.class_id || !formData.start_time || !formData.end_time) {
-      setError('Por favor, preencha todos os campos obrigatórios')
-      setIsLoading(false)
-      return
-    }
-
-    if (Object.keys(validationErrors).length > 0) {
-      setError('Por favor, corrija os erros nos campos')
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const examData = {
-        ...formData,
-        class_id: parseInt(formData.class_id),
-        questions: selectedQuestions,
-        question_points: questionPoints
-      }
-
-      const result = await updateExam(params.id, examData)
-      if (result.success) {
-        router.push('/teacher/exams')
-      } else {
-        setError(result.error || 'Erro ao atualizar prova')
-      }
-    } catch (err: any) {
-      console.error('Erro ao atualizar prova:', err)
-      setError(err.response?.data?.error || err.message || 'Erro inesperado ao atualizar prova')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    const newValue = name === 'duration_minutes' ? parseInt(value) || 0 : value
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: newValue
-    }))
-
-    validateField(name, newValue)
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-
-    validateField(name, value)
-  }
-
-  const handleSelectQuestion = (questionId: number) => {
-    setSelectedQuestions(prev => {
-      const isSelected = prev.includes(questionId)
-      if (isSelected) {
-        // Remover questão e sua pontuação personalizada
-        setQuestionPoints(prevPoints => {
-          const newPoints = { ...prevPoints }
-          delete newPoints[questionId]
-          return newPoints
-        })
-        return prev.filter(id => id !== questionId)
-      } else {
-        // Adicionar questão e definir pontuação padrão
-        const question = questions.find(q => q.id === questionId)
-        if (question) {
-          setQuestionPoints(prevPoints => ({
-            ...prevPoints,
-            [questionId]: question.points
-          }))
-        }
-        return [...prev, questionId]
-      }
-    })
-  }
-
-  const handleSelectAllQuestions = () => {
-    if (selectedQuestions.length === filteredQuestions.length) {
-      setSelectedQuestions([])
-    } else {
-      setSelectedQuestions(filteredQuestions.map(q => q.id))
-    }
-  }
-
-  const handleQuestionPointsChange = (questionId: number, points: number) => {
-    setQuestionPoints(prev => ({
-      ...prev,
-      [questionId]: points
-    }))
-  }
-
-  const getQuestionPoints = (questionId: number, defaultPoints: number) => {
-    return questionPoints[questionId] ?? defaultPoints
-  }
-
-  const truncarTexto = (texto: string, tamanhoMaximo: number) => {
-    if (!texto || typeof texto !== 'string') return '';
-    if (texto.length > tamanhoMaximo) {
-      return texto.substring(0, tamanhoMaximo) + "..."
-    }
-    return texto
-  }
-
   const totalPoints = selectedQuestions.reduce((total, id) => {
     const question = questions.find(q => q.id === id)
-    const points = getQuestionPoints(id, question?.points || 0)
-    return total + points
-  }, 0)
+    const points = questionPoints[id]
+    let pointsValue: number
 
-  // Estatísticas das questões selecionadas
-  const getQuestionStats = () => {
-    const stats = {
-      single_choice: 0,
-      multiple_choice: 0,
-      true_false: 0,
-      essay: 0
+    if (points === '' || points === null || points === undefined) {
+      pointsValue = question?.points || 0
+    } else {
+      pointsValue = typeof points === 'string' ? parseFloat(points) || 0 : points
     }
 
-    selectedQuestions.forEach(id => {
-      const question = questions.find(q => q.id === id)
-      if (question) {
-        stats[question.question_type as keyof typeof stats]++
-      }
-    })
-
-    return stats
-  }
+    return total + pointsValue
+  }, 0)
 
   const questionStats = getQuestionStats()
+  const canEditQuestions = originalStatus === 'draft'
+  const canEditBasicFields = originalStatus === 'draft'
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
+    <div className="max-w-6xl mx-auto py-8 px-4 min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Editar Prova</h1>
         <p className="text-muted-foreground">
@@ -362,7 +369,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Informações Básicas */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -383,10 +389,16 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                 onChange={handleChange}
                 className={validationErrors.title ? 'border-red-300' : ''}
                 placeholder="Ex: Prova 1 - Introdução à Programação"
+                disabled={!canEditBasicFields}
                 required
               />
               {validationErrors.title && (
                 <p className="text-red-600 text-xs mt-1">{validationErrors.title}</p>
+              )}
+              {!canEditBasicFields && (
+                <p className="text-orange-600 text-xs mt-1">
+                  ⚠️ Título não pode ser alterado em provas publicadas
+                </p>
               )}
             </div>
 
@@ -394,7 +406,11 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
               <label htmlFor="class_id" className="block text-sm font-medium text-gray-700 mb-2">
                 Turma *
               </label>
-              <Select value={formData.class_id} onValueChange={(value) => handleSelectChange('class_id', value)}>
+              <Select
+                value={formData.class_id}
+                onValueChange={(value) => canEditBasicFields && handleSelectChange('class_id', value)}
+                disabled={!canEditBasicFields}
+              >
                 <SelectTrigger className={validationErrors.class_id ? 'border-red-300' : ''}>
                   <SelectValue placeholder="Selecione uma turma" />
                 </SelectTrigger>
@@ -409,6 +425,11 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
               {validationErrors.class_id && (
                 <p className="text-red-600 text-xs mt-1">{validationErrors.class_id}</p>
               )}
+              {!canEditBasicFields && (
+                <p className="text-orange-600 text-xs mt-1">
+                  ⚠️ Turma não pode ser alterada em provas publicadas
+                </p>
+              )}
             </div>
 
             <div>
@@ -422,7 +443,13 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                 onChange={handleChange}
                 rows={3}
                 placeholder="Descrição opcional da prova..."
+                disabled={!canEditBasicFields}
               />
+              {!canEditBasicFields && (
+                <p className="text-orange-600 text-xs mt-1">
+                  ⚠️ Descrição não pode ser alterada em provas publicadas
+                </p>
+              )}
             </div>
 
             <div>
@@ -438,6 +465,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                 value={formData.duration_minutes}
                 onChange={handleChange}
                 className={validationErrors.duration_minutes ? 'border-red-300' : ''}
+                disabled={!canEditBasicFields}
                 required
               />
               {validationErrors.duration_minutes && (
@@ -448,6 +476,11 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                   `${Math.floor(formData.duration_minutes / 60)}h ${formData.duration_minutes % 60}min`
                 }
               </p>
+              {!canEditBasicFields && (
+                <p className="text-orange-600 text-xs mt-1">
+                  ⚠️ Duração não pode ser alterada em provas publicadas
+                </p>
+              )}
             </div>
 
             <div>
@@ -457,13 +490,12 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
               <Select
                 value={formData.status}
                 onValueChange={(value) => {
-                  // Validar se a mudança é permitida
                   if (originalStatus === 'published' && value === 'draft') {
                     setError('Uma prova publicada não pode voltar para rascunho. Isso poderia afetar alunos que já iniciaram a prova.')
                     return
                   }
                   handleSelectChange('status', value)
-                  setError('') // Limpar erro se a mudança for válida
+                  setError('')
                 }}
               >
                 <SelectTrigger className={validationErrors.status ? 'border-red-300' : ''}>
@@ -486,7 +518,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                 <p className="text-red-600 text-xs mt-1">{validationErrors.status}</p>
               )}
 
-              {/* Mostrar status atual e possíveis mudanças */}
               <div className="mt-2 space-y-1">
                 <p className="text-gray-500 text-xs">
                   Status atual: <span className="font-medium">
@@ -530,16 +561,25 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                   value={formData.start_time}
                   onChange={handleChange}
                   className={validationErrors.start_time ? 'border-red-300' : ''}
+                  disabled={!canEditBasicFields}
                   required
                 />
                 {validationErrors.start_time && (
                   <p className="text-red-600 text-xs mt-1">{validationErrors.start_time}</p>
+                )}
+                {!canEditBasicFields && (
+                  <p className="text-orange-600 text-xs mt-1">
+                    ⚠️ Data de início não pode ser alterada em provas publicadas
+                  </p>
                 )}
               </div>
 
               <div>
                 <label htmlFor="end_time" className="block text-sm font-medium text-gray-700 mb-2">
                   Data e Hora de Fim *
+                  {!canEditBasicFields && (
+                    <span className="text-green-600 ml-2">✅ Editável</span>
+                  )}
                 </label>
                 <Input
                   id="end_time"
@@ -553,282 +593,34 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                 {validationErrors.end_time && (
                   <p className="text-red-600 text-xs mt-1">{validationErrors.end_time}</p>
                 )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Questões Selecionadas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Questões Selecionadas ({selectedQuestions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedQuestions.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                Nenhuma questão selecionada. Use a seção abaixo para adicionar questões.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {/* Lista de questões selecionadas */}
-                <div className="max-h-60 overflow-auto border rounded-lg">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-white">
-                      <TableRow>
-                        <TableHead>Questão</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Pontos Padrão</TableHead>
-                        <TableHead>Pontos na Prova</TableHead>
-                        <TableHead className="w-12">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedQuestions.map((questionId) => {
-                        const question = questions.find(q => q.id === questionId)
-                        if (!question) return null
-
-                        return (
-                          <TableRow key={questionId}>
-                            <TableCell>
-                              <div className="font-medium text-sm">
-                                {truncarTexto(question.text || question.question_text || '', 80)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
-                                question.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
-                                  question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-orange-100 text-orange-800'
-                                }`}>
-                                {question.question_type === 'single_choice' ? 'Objetiva' :
-                                  question.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
-                                    question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-gray-600">{question.points}</span>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.1"
-                                value={getQuestionPoints(questionId, question.points)}
-                                onChange={(e) => handleQuestionPointsChange(questionId, parseFloat(e.target.value) || 0)}
-                                className="w-20"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSelectQuestion(questionId)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                ×
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-
-            {selectedQuestions.length > 0 && (
-              <div className="space-y-4">
-                {/* Estatísticas */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <div className="bg-blue-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-600">{selectedQuestions.length}</div>
-                    <div className="text-xs text-blue-700">Total</div>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-green-600">{questionStats.single_choice}</div>
-                    <div className="text-xs text-green-700">Objetiva</div>
-                  </div>
-                  <div className="bg-purple-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-purple-600">{questionStats.multiple_choice}</div>
-                    <div className="text-xs text-purple-700">Múltipla Escolha</div>
-                  </div>
-                  <div className="bg-yellow-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-yellow-600">{questionStats.true_false}</div>
-                    <div className="text-xs text-yellow-700">V/F</div>
-                  </div>
-                  <div className="bg-orange-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-orange-600">{questionStats.essay}</div>
-                    <div className="text-xs text-orange-700">Dissertativa</div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="font-medium text-gray-700">
-                    Total de Pontos: {totalPoints.toFixed(1)}
+                {!canEditBasicFields && (
+                  <p className="text-green-600 text-xs mt-1">
+                    ✅ Você pode alterar o horário de fim para reabrir ou estender a prova
                   </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Banco de Questões */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Banco de Questões</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Filtros */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Buscar questões..."
-                  value={questionSearch}
-                  onChange={(e) => setQuestionSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Select value={questionFilters.type} onValueChange={(value) =>
-                  setQuestionFilters(prev => ({ ...prev, type: value }))
-                }>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    <SelectItem value="single_choice">Objetiva</SelectItem>
-                    <SelectItem value="multiple_choice">Múltipla Escolha</SelectItem>
-                    <SelectItem value="true_false">V/F</SelectItem>
-                    <SelectItem value="essay">Dissertativa</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={questionFilters.difficulty} onValueChange={(value) =>
-                  setQuestionFilters(prev => ({ ...prev, difficulty: value }))
-                }>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas dificuldades</SelectItem>
-                    <SelectItem value="easy">Fácil</SelectItem>
-                    <SelectItem value="medium">Médio</SelectItem>
-                    <SelectItem value="hard">Difícil</SelectItem>
-                  </SelectContent>
-                </Select>
+                )}
               </div>
             </div>
-
-            {/* Lista de questões */}
-            {filteredQuestions.length === 0 ? (
-              <div className="text-center py-12">
-                <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 mb-4">
-                  {questionSearch ? "Nenhuma questão encontrada com os filtros aplicados" : "Nenhuma questão disponível"}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/teacher/questions/new-question')}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Nova Questão
-                </Button>
-              </div>
-            ) : (
-              <div className="border rounded-lg max-h-[600px] overflow-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-white z-10">
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={filteredQuestions.length > 0 && filteredQuestions.every(q => selectedQuestions.includes(q.id))}
-                          onCheckedChange={handleSelectAllQuestions}
-                        />
-                      </TableHead>
-                      <TableHead>Questão</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Dificuldade</TableHead>
-                      <TableHead>Pontos Padrão</TableHead>
-                      <TableHead>Pontos na Prova</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredQuestions.map((question: Question) => (
-                      <TableRow
-                        key={question.id}
-                        className={selectedQuestions.includes(question.id) ? "bg-blue-50" : ""}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedQuestions.includes(question.id)}
-                            onCheckedChange={() => handleSelectQuestion(question.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">
-                            {truncarTexto(question.text || question.question_text || '', 100)}
-                          </div>
-                          {question.category && (
-                            <div className="text-sm text-gray-500">
-                              Categoria: {question.category}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.question_type === 'single_choice' ? 'bg-blue-100 text-blue-800' :
-                            question.question_type === 'multiple_choice' ? 'bg-purple-100 text-purple-800' :
-                              question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-orange-100 text-orange-800'
-                            }`}>
-                            {question.question_type === 'single_choice' ? 'Objetiva' :
-                              question.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
-                                question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-                            question.difficulty === 'hard' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                            {question.difficulty === 'easy' ? 'Fácil' :
-                              question.difficulty === 'hard' ? 'Difícil' : 'Médio'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">{question.points}</span>
-                        </TableCell>
-                        <TableCell>
-                          {selectedQuestions.includes(question.id) ? (
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.1"
-                              value={getQuestionPoints(question.id, question.points)}
-                              onChange={(e) => handleQuestionPointsChange(question.id, parseFloat(e.target.value) || 0)}
-                              className="w-20"
-                            />
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {!canEditBasicFields && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-orange-800 mb-1">
+                    Restrições de Edição - Prova {originalStatus === 'published' ? 'Publicada' : 'Finalizada'}
+                  </h3>
+                  <div className="text-orange-700 text-sm space-y-1">
+                    <p>• <strong>Não é possível alterar:</strong> título, turma, descrição, duração, data de início e questões</p>
+                    <p>• <strong>É possível alterar:</strong> data e hora de fim (para reabrir ou estender a prova)</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-between">
           <Button type="button" variant="outline" onClick={() => router.back()}>
@@ -856,4 +648,4 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
       </form>
     </div>
   )
-} 
+}
