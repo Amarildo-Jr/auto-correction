@@ -57,6 +57,38 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
   const [examStarted, setExamStarted] = useState(false)
   const [enrollmentId, setEnrollmentId] = useState<number | null>(null)
 
+  // Proteção anti-cola para questões dissertativas
+  const handlePreventCopyPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    // Mostrar aviso visual
+    const element = e.target as HTMLElement
+    const originalBorder = element.style.border
+    element.style.border = '2px solid #ef4444'
+    setTimeout(() => {
+      element.style.border = originalBorder
+    }, 500)
+  }
+
+  const handlePreventKeyboardShortcuts = (e: React.KeyboardEvent) => {
+    const isCtrlKey = e.ctrlKey || e.metaKey
+    const forbiddenKeys = ['c', 'v', 'x', 'a', 'z', 'y']
+
+    if (isCtrlKey && forbiddenKeys.includes(e.key.toLowerCase())) {
+      e.preventDefault()
+    }
+
+    // Bloquear F12, Ctrl+Shift+I, Ctrl+U
+    if (e.key === 'F12' ||
+      (isCtrlKey && e.shiftKey && e.key === 'I') ||
+      (isCtrlKey && e.key === 'u')) {
+      e.preventDefault()
+    }
+  }
+
+  const handlePreventContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   // Carregar dados da prova
   useEffect(() => {
     if (exams.length > 0) {
@@ -441,18 +473,35 @@ export default function AnswerExamPage({ params }: AnswerExamPageProps) {
                   {/* Campo de texto para dissertativa */}
                   {currentQuestion.question_type === 'essay' && (
                     <div>
-                      <textarea
-                        value={currentAnswer?.answer_text || ''}
-                        onChange={(e) => handleAnswerChange(currentQuestion.id, {
-                          answer_text: e.target.value
-                        })}
-                        placeholder="Digite sua resposta aqui..."
-                        rows={8}
-                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Caracteres: {currentAnswer?.answer_text?.length || 0}
-                      </p>
+                      <div className="relative">
+                        <textarea
+                          value={currentAnswer?.answer_text || ''}
+                          onChange={(e) => handleAnswerChange(currentQuestion.id, {
+                            answer_text: e.target.value
+                          })}
+                          placeholder="Digite sua resposta aqui... (Copy/Paste não permitido)"
+                          rows={8}
+                          className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          onPaste={handlePreventCopyPaste}
+                          onCopy={handlePreventCopyPaste}
+                          onCut={handlePreventCopyPaste}
+                          onKeyDown={handlePreventKeyboardShortcuts}
+                          onContextMenu={handlePreventContextMenu}
+                          spellCheck={false}
+                          autoComplete="off"
+                        />
+                        <div className="absolute top-2 right-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                          🛡️ Protegido
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <p className="text-xs text-gray-500">
+                          Caracteres: {currentAnswer?.answer_text?.length || 0}
+                        </p>
+                        <p className="text-xs text-amber-600">
+                          ⚠️ Copy/Paste bloqueado por segurança
+                        </p>
+                      </div>
                     </div>
                   )}
 

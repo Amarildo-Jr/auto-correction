@@ -431,14 +431,14 @@ export const enrollmentService = {
   },
 
   async submitAnswer(enrollmentId: number, answerData: any) {
-    return apiRequest(`/api/enrollment/${enrollmentId}/answer`, {
+    return apiRequest(`/api/enrollments/${enrollmentId}/submit-answer`, {
       method: 'POST',
       data: answerData
     });
   },
 
   async finish(enrollmentId: number) {
-    return apiRequest(`/api/enrollment/${enrollmentId}/finish`, {
+    return apiRequest(`/api/enrollments/${enrollmentId}/finish`, {
       method: 'POST'
     });
   }

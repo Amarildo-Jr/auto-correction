@@ -44,6 +44,38 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [isFinished, setIsFinished] = useState(false)
+
+  // Proteção anti-cola para questões dissertativas
+  const handlePreventCopyPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    // Mostrar aviso visual
+    const element = e.target as HTMLElement
+    const originalBorder = element.style.border
+    element.style.border = '2px solid #ef4444'
+    setTimeout(() => {
+      element.style.border = originalBorder
+    }, 500)
+  }
+
+  const handlePreventKeyboardShortcuts = (e: React.KeyboardEvent) => {
+    const isCtrlKey = e.ctrlKey || e.metaKey
+    const forbiddenKeys = ['c', 'v', 'x', 'a', 'z', 'y']
+
+    if (isCtrlKey && forbiddenKeys.includes(e.key.toLowerCase())) {
+      e.preventDefault()
+    }
+
+    // Bloquear F12, Ctrl+Shift+I, Ctrl+U
+    if (e.key === 'F12' ||
+      (isCtrlKey && e.shiftKey && e.key === 'I') ||
+      (isCtrlKey && e.key === 'u')) {
+      e.preventDefault()
+    }
+  }
+
+  const handlePreventContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
   const [result, setResult] = useState<any>(null)
 
   // Verificar status da inscrição
@@ -641,18 +673,35 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
                     <label htmlFor="essay-answer" className="block text-sm font-medium text-gray-700">
                       Sua resposta:
                     </label>
-                    <Textarea
-                      id="essay-answer"
-                      rows={8}
-                      value={currentAnswer?.answer_text || ''}
-                      onChange={(e) =>
-                        handleAnswerChange(currentQuestion.id, e.target.value, true)}
-                      placeholder="Digite sua resposta aqui..."
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Resposta salva automaticamente conforme você digita
-                    </p>
+                    <div className="relative">
+                      <Textarea
+                        id="essay-answer"
+                        rows={8}
+                        value={currentAnswer?.answer_text || ''}
+                        onChange={(e) =>
+                          handleAnswerChange(currentQuestion.id, e.target.value, true)}
+                        placeholder="Digite sua resposta aqui... (Copy/Paste não permitido)"
+                        className="resize-none"
+                        onPaste={handlePreventCopyPaste}
+                        onCopy={handlePreventCopyPaste}
+                        onCut={handlePreventCopyPaste}
+                        onKeyDown={handlePreventKeyboardShortcuts}
+                        onContextMenu={handlePreventContextMenu}
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                      <div className="absolute top-2 right-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                        🛡️ Protegido
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-gray-500">
+                        Resposta salva automaticamente conforme você digita
+                      </p>
+                      <p className="text-xs text-amber-600">
+                        ⚠️ Copy/Paste bloqueado por segurança
+                      </p>
+                    </div>
                   </div>
                 )}
 

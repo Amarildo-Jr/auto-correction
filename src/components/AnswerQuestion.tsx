@@ -22,6 +22,38 @@ export function AnswerQuestion(props: answerQuestionProps) {
   const [answer, setAnswer] = useState(props.writtenAnswer || "");
   const [alternativeId, setAlternativeId] = useState(-1);
 
+  // Proteção anti-cola para questões dissertativas
+  const handlePreventCopyPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    // Mostrar aviso visual
+    const element = e.target as HTMLElement
+    const originalBorder = element.style.border
+    element.style.border = '2px solid #ef4444'
+    setTimeout(() => {
+      element.style.border = originalBorder
+    }, 500)
+  }
+
+  const handlePreventKeyboardShortcuts = (e: React.KeyboardEvent) => {
+    const isCtrlKey = e.ctrlKey || e.metaKey
+    const forbiddenKeys = ['c', 'v', 'x', 'a', 'z', 'y']
+
+    if (isCtrlKey && forbiddenKeys.includes(e.key.toLowerCase())) {
+      e.preventDefault()
+    }
+
+    // Bloquear F12, Ctrl+Shift+I, Ctrl+U
+    if (e.key === 'F12' ||
+      (isCtrlKey && e.shiftKey && e.key === 'I') ||
+      (isCtrlKey && e.key === 'u')) {
+      e.preventDefault()
+    }
+  }
+
+  const handlePreventContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+  }
+
   const handleAnswerChange = (newAnswer: string) => {
     setAnswer(newAnswer);
     props.selectedAnswer(props.id, newAnswer, alternativeId);
@@ -66,11 +98,27 @@ export function AnswerQuestion(props: answerQuestionProps) {
               <p className="text-sm italic w-full text-start">
                 Responda a questão utilizando o campo de texto abaixo:
               </p>
-              <Textarea
-                className="h-48 max-w-screen-3xl min-h-48 max-h-80"
-                value={answer}
-                onChange={(e) => handleAnswerChange(e.target.value)}
-              />
+              <div className="relative w-full">
+                <Textarea
+                  className="h-48 max-w-screen-3xl min-h-48 max-h-80"
+                  value={answer}
+                  onChange={(e) => handleAnswerChange(e.target.value)}
+                  placeholder="Digite sua resposta aqui... (Copy/Paste não permitido)"
+                  onPaste={handlePreventCopyPaste}
+                  onCopy={handlePreventCopyPaste}
+                  onCut={handlePreventCopyPaste}
+                  onKeyDown={handlePreventKeyboardShortcuts}
+                  onContextMenu={handlePreventContextMenu}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                <div className="absolute top-2 right-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                  🛡️ Protegido
+                </div>
+              </div>
+              <p className="text-xs text-amber-600 mt-1">
+                ⚠️ Por questões de segurança, copiar e colar não são permitidos nesta questão
+              </p>
             </div>
           )}
         </div>
