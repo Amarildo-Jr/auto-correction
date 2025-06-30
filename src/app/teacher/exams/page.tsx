@@ -352,7 +352,7 @@ export default function TeacherExamsPage() {
                     Visualizar
                   </Button>
 
-                  {(exam.status === 'draft' || exam.status === 'published') && (
+                  {(exam.status === 'draft' || exam.status === 'published' || exam.status === 'finished') && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -360,7 +360,7 @@ export default function TeacherExamsPage() {
                       className="flex items-center gap-1"
                     >
                       <Edit className="w-4 h-4" />
-                      Editar
+                      {exam.status === 'finished' ? 'Reabrir' : 'Editar'}
                     </Button>
                   )}
 

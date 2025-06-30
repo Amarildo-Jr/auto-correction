@@ -447,7 +447,7 @@ export const enrollmentService = {
 // Serviços de monitoramento
 export const monitoringService = {
   async getExamMonitoringStats(examId: number) {
-    return apiRequest(`/api/exams/${examId}/monitoring`, { method: 'GET' });
+    return apiRequest(`/api/monitoring/exam-stats/${examId}`, { method: 'GET' });
   },
 
   async getStudentsProgress(examId: number) {
