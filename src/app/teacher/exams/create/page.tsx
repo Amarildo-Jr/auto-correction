@@ -201,10 +201,46 @@ function CreateExamContent() {
     const { name, value } = e.target
     const newValue = name === 'duration_minutes' ? parseInt(value) || 0 : value
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: newValue
-    }))
+    setFormData(prev => {
+      const updatedData = {
+        ...prev,
+        [name]: newValue
+      }
+
+      // Auto-calcular duração quando horários mudarem
+      if (name === 'start_time' || name === 'end_time') {
+        const startTime = name === 'start_time' ? value : prev.start_time
+        const endTime = name === 'end_time' ? value : prev.end_time
+
+        if (startTime && endTime) {
+          const startDate = new Date(startTime)
+          const endDate = new Date(endTime)
+
+          if (endDate > startDate) {
+            const diffMs = endDate.getTime() - startDate.getTime()
+            const diffMinutes = Math.round(diffMs / (1000 * 60))
+            updatedData.duration_minutes = diffMinutes
+          }
+        }
+      }
+
+      // Auto-ajustar end_time quando duração mudar
+      if (name === 'duration_minutes' && prev.start_time && typeof newValue === 'number' && newValue > 0) {
+        const startDate = new Date(prev.start_time)
+        const endDate = new Date(startDate.getTime() + newValue * 60 * 1000)
+
+        // Formatar data para datetime-local input
+        const year = endDate.getFullYear()
+        const month = String(endDate.getMonth() + 1).padStart(2, '0')
+        const day = String(endDate.getDate()).padStart(2, '0')
+        const hours = String(endDate.getHours()).padStart(2, '0')
+        const minutes = String(endDate.getMinutes()).padStart(2, '0')
+
+        updatedData.end_time = `${year}-${month}-${day}T${hours}:${minutes}`
+      }
+
+      return updatedData
+    })
 
     validateField(name, newValue)
   }
@@ -438,10 +474,20 @@ function CreateExamContent() {
                   {validationErrors.duration_minutes && (
                     <p className="text-red-600 text-xs mt-1">{validationErrors.duration_minutes}</p>
                   )}
+                  <div className="flex items-center gap-2 mt-1">
+                    {formData.duration_minutes > 0 && (
+                      <p className="text-blue-600 text-xs font-medium">
+                        📅 {Math.floor(formData.duration_minutes / 60)}h {formData.duration_minutes % 60}min
+                      </p>
+                    )}
+                    {formData.start_time && formData.end_time && (
+                      <p className="text-green-600 text-xs">
+                        ✓ Calculado automaticamente
+                      </p>
+                    )}
+                  </div>
                   <p className="text-gray-500 text-xs mt-1">
-                    {formData.duration_minutes > 0 &&
-                      `${Math.floor(formData.duration_minutes / 60)}h ${formData.duration_minutes % 60}min`
-                    }
+                    💡 A duração é calculada automaticamente quando você define início e fim
                   </p>
                 </div>
 
@@ -487,20 +533,39 @@ function CreateExamContent() {
                 {formData.title && formData.start_time && formData.end_time && (
                   <Card className="bg-blue-50 border-blue-200">
                     <CardContent className="p-4">
-                      <h4 className="font-medium text-blue-900 mb-2">Resumo da Prova</h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-blue-700">Título:</span> {formData.title}
+                      <h4 className="font-medium text-blue-900 mb-3 flex items-center gap-2">
+                        📋 Resumo da Prova
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          ✓ Duração Calculada
+                        </span>
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-blue-700 font-medium">📚 Título:</span><br />
+                            <span className="text-blue-900">{formData.title}</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-700 font-medium">⏱️ Duração:</span><br />
+                            <span className="text-blue-900 font-bold">
+                              {Math.floor(formData.duration_minutes / 60)}h {formData.duration_minutes % 60}min
+                              <span className="text-green-600 ml-2">({formData.duration_minutes} minutos)</span>
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-blue-700">Duração:</span> {Math.floor(formData.duration_minutes / 60)}h {formData.duration_minutes % 60}min
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-blue-700 font-medium">🕐 Início:</span><br />
+                            <span className="text-blue-900">{new Date(formData.start_time).toLocaleString('pt-BR')}</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-700 font-medium">🕑 Fim:</span><br />
+                            <span className="text-blue-900">{new Date(formData.end_time).toLocaleString('pt-BR')}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-blue-700">Início:</span> {new Date(formData.start_time).toLocaleString('pt-BR')}
-                        </div>
-                        <div>
-                          <span className="text-blue-700">Fim:</span> {new Date(formData.end_time).toLocaleString('pt-BR')}
-                        </div>
+                      </div>
+                      <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                        <strong>💡 Dica:</strong> A duração foi calculada automaticamente baseada na diferença entre início e fim
                       </div>
                     </CardContent>
                   </Card>
