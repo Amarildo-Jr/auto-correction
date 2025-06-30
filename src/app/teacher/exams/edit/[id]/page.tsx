@@ -518,8 +518,8 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                                   question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-orange-100 text-orange-800'
                                 }`}>
-                                {question.question_type === 'single_choice' ? 'Única' :
-                                  question.question_type === 'multiple_choice' ? 'Múltipla' :
+                                {question.question_type === 'single_choice' ? 'Objetiva' :
+                                  question.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
                                     question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
                               </span>
                             </TableCell>
@@ -566,7 +566,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                   </div>
                   <div className="bg-green-50 p-3 rounded-lg text-center">
                     <div className="text-2xl font-bold text-green-600">{questionStats.single_choice}</div>
-                    <div className="text-xs text-green-700">Escolha Única</div>
+                    <div className="text-xs text-green-700">Objetiva</div>
                   </div>
                   <div className="bg-purple-50 p-3 rounded-lg text-center">
                     <div className="text-2xl font-bold text-purple-600">{questionStats.multiple_choice}</div>
@@ -620,7 +620,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os tipos</SelectItem>
-                    <SelectItem value="single_choice">Escolha Única</SelectItem>
+                    <SelectItem value="single_choice">Objetiva</SelectItem>
                     <SelectItem value="multiple_choice">Múltipla Escolha</SelectItem>
                     <SelectItem value="true_false">V/F</SelectItem>
                     <SelectItem value="essay">Dissertativa</SelectItem>
@@ -705,8 +705,8 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                               question.question_type === 'true_false' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-orange-100 text-orange-800'
                             }`}>
-                            {question.question_type === 'single_choice' ? 'Única' :
-                              question.question_type === 'multiple_choice' ? 'Múltipla' :
+                            {question.question_type === 'single_choice' ? 'Objetiva' :
+                              question.question_type === 'multiple_choice' ? 'Múltipla Escolha' :
                                 question.question_type === 'true_false' ? 'V/F' : 'Dissertativa'}
                           </span>
                         </TableCell>
