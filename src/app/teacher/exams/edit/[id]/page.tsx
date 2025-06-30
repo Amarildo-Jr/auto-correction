@@ -30,7 +30,10 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
     start_time: '',
     end_time: '',
     class_id: '',
+    status: 'draft' as 'draft' | 'published',
   })
+
+  const [originalStatus, setOriginalStatus] = useState<'draft' | 'published'>('draft')
 
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([])
   const [questionPoints, setQuestionPoints] = useState<Record<number, number>>({})
@@ -54,14 +57,29 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
         const exam = await getExam(params.id)
 
         if (exam) {
+          // Função auxiliar para converter data UTC para formato local do input datetime-local
+          const formatDateTimeLocal = (dateString: string) => {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+          };
+
           setFormData({
             title: exam.title,
             description: exam.description || '',
             duration_minutes: exam.duration_minutes,
-            start_time: exam.start_time ? new Date(exam.start_time).toISOString().slice(0, 16) : '',
-            end_time: exam.end_time ? new Date(exam.end_time).toISOString().slice(0, 16) : '',
+            start_time: exam.start_time ? formatDateTimeLocal(exam.start_time) : '',
+            end_time: exam.end_time ? formatDateTimeLocal(exam.end_time) : '',
             class_id: exam.class_id?.toString() || '',
+            status: exam.status || 'draft',
           })
+
+          // Salvar status original para controle de edição
+          setOriginalStatus(exam.status || 'draft')
 
           // Carregar questões da prova e suas pontuações
           if (exam.questions) {
@@ -145,6 +163,13 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
           errors.end_time = 'Data de fim deve ser posterior ao início'
         } else {
           delete errors.end_time
+        }
+        break
+      case 'status':
+        if (!value || (value !== 'draft' && value !== 'published')) {
+          errors.status = 'Status é obrigatório'
+        } else {
+          delete errors.status
         }
         break
     }
@@ -319,14 +344,6 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <Button
-          onClick={() => router.back()}
-          variant="outline"
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
         <h1 className="text-3xl font-bold mb-2">Editar Prova</h1>
         <p className="text-muted-foreground">
           Modifique as informações da prova e suas questões
@@ -431,6 +448,74 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
                   `${Math.floor(formData.duration_minutes / 60)}h ${formData.duration_minutes % 60}min`
                 }
               </p>
+            </div>
+
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                Status da Prova *
+              </label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => {
+                  // Validar se a mudança é permitida
+                  if (originalStatus === 'published' && value === 'draft') {
+                    setError('Uma prova publicada não pode voltar para rascunho. Isso poderia afetar alunos que já iniciaram a prova.')
+                    return
+                  }
+                  handleSelectChange('status', value)
+                  setError('') // Limpar erro se a mudança for válida
+                }}
+              >
+                <SelectTrigger className={validationErrors.status ? 'border-red-300' : ''}>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    value="draft"
+                    disabled={originalStatus === 'published'}
+                  >
+                    Rascunho
+                    {originalStatus === 'published' && (
+                      <span className="text-red-500 ml-2">(Não disponível)</span>
+                    )}
+                  </SelectItem>
+                  <SelectItem value="published">Publicar</SelectItem>
+                </SelectContent>
+              </Select>
+              {validationErrors.status && (
+                <p className="text-red-600 text-xs mt-1">{validationErrors.status}</p>
+              )}
+
+              {/* Mostrar status atual e possíveis mudanças */}
+              <div className="mt-2 space-y-1">
+                <p className="text-gray-500 text-xs">
+                  Status atual: <span className="font-medium">
+                    {originalStatus === 'draft' ? 'Rascunho' : 'Publicada'}
+                  </span>
+                </p>
+
+                {originalStatus === 'draft' && formData.status === 'published' && (
+                  <p className="text-blue-600 text-xs bg-blue-50 p-2 rounded">
+                    ⚠️ A prova será publicada e ficará disponível para alunos no período definido.
+                  </p>
+                )}
+
+                {originalStatus === 'published' && (
+                  <p className="text-orange-600 text-xs bg-orange-50 p-2 rounded">
+                    ℹ️ Esta prova já está publicada. Você pode editá-la, mas não pode voltar para rascunho.
+                  </p>
+                )}
+
+                {formData.status === 'draft' ? (
+                  <p className="text-gray-500 text-xs">
+                    A prova será salva como rascunho (não visível para alunos)
+                  </p>
+                ) : (
+                  <p className="text-gray-500 text-xs">
+                    A prova será publicada e disponível para alunos no período definido
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

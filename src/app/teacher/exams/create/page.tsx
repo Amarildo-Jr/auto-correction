@@ -41,6 +41,7 @@ function CreateExamContent() {
     start_time: '',
     end_time: '',
     class_id: '',
+    status: 'draft' as 'draft' | 'published',
   })
 
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([])
@@ -117,6 +118,13 @@ function CreateExamContent() {
           errors.end_time = 'Data de fim deve ser posterior ao início'
         } else {
           delete errors.end_time
+        }
+        break
+      case 'status':
+        if (!value || (value !== 'draft' && value !== 'published')) {
+          errors.status = 'Status é obrigatório'
+        } else {
+          delete errors.status
         }
         break
     }
@@ -441,6 +449,30 @@ function CreateExamContent() {
                   <p className="text-gray-500 text-xs mt-1">
                     {formData.duration_minutes > 0 &&
                       `${Math.floor(formData.duration_minutes / 60)}h ${formData.duration_minutes % 60}min`
+                    }
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                    Status da Prova *
+                  </label>
+                  <Select value={formData.status} onValueChange={(value) => handleSelectChange('status', value)}>
+                    <SelectTrigger className={validationErrors.status ? 'border-red-300' : ''}>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Rascunho</SelectItem>
+                      <SelectItem value="published">Publicar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.status && (
+                    <p className="text-red-600 text-xs mt-1">{validationErrors.status}</p>
+                  )}
+                  <p className="text-gray-500 text-xs mt-1">
+                    {formData.status === 'draft'
+                      ? 'A prova será salva como rascunho (não visível para alunos)'
+                      : 'A prova será publicada e disponível para alunos no período definido'
                     }
                   </p>
                 </div>
