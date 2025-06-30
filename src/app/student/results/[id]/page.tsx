@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAppContext } from "@/contexts/AppContext"
+import { resultService } from "@/services/api"
 import { ArrowLeft, Calendar, CheckCircle, Clock, FileText, Timer, Trophy, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -69,29 +70,12 @@ export default function StudentResultPage({ params }: { params: { id: string } }
       setIsLoading(true)
       setError('')
 
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setError('Token de autenticação não encontrado')
-        return
-      }
-
-      const response = await fetch(`http://localhost:5000/api/student/results/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao carregar resultado')
-      }
-
-      const data = await response.json()
+      // Usar o serviço de API
+      const data = await resultService.getResultById(params.id)
       setResult(data)
     } catch (err: any) {
       console.error('Erro ao carregar resultado:', err)
-      setError(err.message || 'Erro ao carregar resultado')
+      setError(err.message || 'Erro ao carregar resultado da prova')
     } finally {
       setIsLoading(false)
     }

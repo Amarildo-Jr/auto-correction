@@ -97,7 +97,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
           const startTime = new Date(status.start_time)
           const now = new Date()
           const elapsedMinutes = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60))
-          const remainingMinutes = Math.max(0, exam.duration - elapsedMinutes)
+          const remainingMinutes = Math.max(0, (exam.duration_minutes || exam.duration || 0) - elapsedMinutes)
           setTimeRemaining(remainingMinutes * 60)
 
           // Carregar respostas existentes
@@ -279,9 +279,14 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
   }
 
   const formatTime = (seconds: number) => {
+    // Garantir que seconds é um número válido
+    if (isNaN(seconds) || seconds < 0) {
+      return '00:00:00'
+    }
+
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
+    const secs = Math.floor(seconds % 60)
 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }

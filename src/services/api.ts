@@ -387,7 +387,7 @@ export const resultService = {
   },
 
   async getResultById(id: string) {
-    return apiRequest(`/api/results/${id}`, { method: 'GET' });
+    return apiRequest(`/api/student/results/${id}`, { method: 'GET' });
   }
 };
 
