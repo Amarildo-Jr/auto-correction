@@ -33,6 +33,28 @@ export default function StudentDashboard() {
   const { results, isLoading: resultsLoading } = useResults()
   const router = useRouter()
 
+  // Provas em andamento
+  const ongoingExams = useMemo(() => {
+    const now = new Date()
+    return exams.filter((exam: any) => {
+      const startTime = new Date(exam.start_time)
+      const endTime = new Date(exam.end_time)
+
+      // Verificar se está no período correto
+      const isInTimeWindow = exam.status === 'published' && now >= startTime && now <= endTime
+
+      if (!isInTimeWindow) return false
+
+      // Verificar se o estudante já completou esta prova
+      const hasCompletedResult = results?.some((result: any) =>
+        result.exam_id === exam.id && result.status === 'completed'
+      )
+
+      // Só mostrar se não tiver resultado concluído
+      return !hasCompletedResult
+    })
+  }, [exams, results])
+
   // Calcular estatísticas com dados reais
   const stats = useMemo(() => {
     const now = new Date()
@@ -53,13 +75,6 @@ export default function StudentDashboard() {
       ? completedResults.reduce((sum: number, r: any) => sum + r.percentage, 0) / completedResults.length
       : 0
 
-    // Provas em andamento
-    const ongoingExams = availableExams.filter((exam: any) => {
-      const startTime = new Date(exam.start_time)
-      const endTime = new Date(exam.end_time)
-      return now >= startTime && now <= endTime
-    })
-
     return {
       totalClasses: classes.length,
       upcomingExams: upcomingExams.length,
@@ -67,7 +82,7 @@ export default function StudentDashboard() {
       averageScore,
       ongoingExams: ongoingExams.length
     }
-  }, [exams, classes, results])
+  }, [exams, classes, results, ongoingExams])
 
   // Próximas provas com mais detalhes
   const upcomingExams = useMemo(() => {
@@ -77,16 +92,6 @@ export default function StudentDashboard() {
     ).sort((a: any, b: any) =>
       new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
     ).slice(0, 5)
-  }, [exams])
-
-  // Provas em andamento
-  const ongoingExams = useMemo(() => {
-    const now = new Date()
-    return exams.filter((exam: any) => {
-      const startTime = new Date(exam.start_time)
-      const endTime = new Date(exam.end_time)
-      return exam.status === 'published' && now >= startTime && now <= endTime
-    })
   }, [exams])
 
   // Resultados recentes

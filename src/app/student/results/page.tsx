@@ -40,7 +40,8 @@ export default function StudentResults() {
 
   // Filtrar resultados baseado na busca e turma selecionada
   const filteredResults = results.filter(result => {
-    const matchesSearch = result.exam_title.toLowerCase().includes(searchTerm.toLowerCase())
+    const examTitle = result.exam?.title || result.exam_title || ''
+    const matchesSearch = examTitle.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesSearch
   })
 
