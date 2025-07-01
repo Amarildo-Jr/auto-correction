@@ -18,7 +18,9 @@ import {
   Edit3,
   FileText,
   HandIcon,
+  RefreshCw,
   Save,
+  Settings,
   Target,
   User,
   XCircle,
@@ -216,41 +218,62 @@ export default function StudentResultDetailPage() {
   }
 
   const handleAutoCorrection = async (answerId: number) => {
-    setCorrectingAnswers(prev => new Set(Array.from(prev).concat([answerId])))
+    setCorrectingAnswers(prev => new Set([...prev, answerId]))
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/auto-correct-single`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          answer_id: answerId
-        })
+      await api.post(`/api/teacher/auto-correct-single`, {
+        answer_id: answerId
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro na correção automática')
-      }
-
-      const data = await response.json()
-
-      // Recarregar dados
+      // Recarregar apenas os dados do resultado, sem recarregar a página
       await loadStudentResult()
-
-      alert(`Correção automática concluída! Pontuação: ${data.points_earned.toFixed(1).replace('.', ',')}/${data.max_points.toFixed(1).replace('.', ',')}`)
-    } catch (error: any) {
-      console.error('Erro na correção automática:', error)
-      alert(error.message || 'Erro na correção automática')
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao corrigir automaticamente')
     } finally {
       setCorrectingAnswers(prev => {
         const newSet = new Set(prev)
         newSet.delete(answerId)
         return newSet
       })
+    }
+  }
+
+  const handleRecorrectExam = async () => {
+    if (!result?.exam_id) return
+
+    const confirmed = confirm('Tem certeza que deseja recorrigir TODA a prova? Esta ação irá:\n\n• Recorrigir todas as questões objetivas\n• Recorrigir questões dissertativas com correção automática\n• ZERAR correções manuais existentes\n• Recalcular nota total\n\nEsta ação não pode ser desfeita.')
+
+    if (!confirmed) return
+
+    try {
+      setSaving(true)
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/full-recorrection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          exam_id: result.exam_id
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro na recorreção completa')
+      }
+
+      const data = await response.json()
+
+      // Recarregar resultado
+      await loadStudentResult()
+
+      alert(`Recorreção completa concluída!\n\n• Prova recorrigida\n• ${data.essay_corrected || 0} questões dissertativas corrigidas automaticamente\n• ${data.objective_corrected || 0} questões objetivas corrigidas`)
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro na recorreção completa')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -331,6 +354,39 @@ export default function StudentResultDetailPage() {
                 {new Date(result.finished_at).toLocaleString('pt-BR')}
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ações Gerais */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Ações
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <Button
+              onClick={() => loadStudentResult()}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Atualizar
+            </Button>
+
+            <Button
+              onClick={() => handleRecorrectExam()}
+              variant="outline"
+              size="sm"
+              disabled={Object.keys(correctingAnswers).length > 0}
+              className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Recorrigir Prova Inteira
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -512,26 +568,27 @@ export default function StudentResultDetailPage() {
                         </Button>
 
                         {/* Botão para recorrigir automaticamente */}
-                        {answer.auto_correction_enabled && answer.expected_answer && (
-                          <Button
-                            onClick={() => handleAutoCorrection(answer.id)}
-                            size="sm"
-                            variant="outline"
-                            disabled={correctingAnswers.has(answer.id)}
-                          >
-                            {correctingAnswers.has(answer.id) ? (
-                              <>
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600 mr-1"></div>
-                                Corrigindo...
-                              </>
-                            ) : (
-                              <>
-                                <Zap className="w-3 h-3 mr-1" />
-                                Recorrigir Auto
-                              </>
-                            )}
-                          </Button>
-                        )}
+                        {answer.auto_correction_enabled && answer.expected_answer &&
+                          (answer.correction_method === 'auto' || answer.correction_method === 'manual') && (
+                            <Button
+                              onClick={() => handleAutoCorrection(answer.id)}
+                              size="sm"
+                              variant="outline"
+                              disabled={correctingAnswers.has(answer.id)}
+                            >
+                              {correctingAnswers.has(answer.id) ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600 mr-1"></div>
+                                  Corrigindo...
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="w-3 h-3 mr-1" />
+                                  Recorrigir Auto
+                                </>
+                              )}
+                            </Button>
+                          )}
                       </div>
                     </div>
 

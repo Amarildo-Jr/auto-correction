@@ -106,21 +106,41 @@ export default function TeacherResultsPage() {
   }
 
   const handleRecalculateExam = async (examId: number) => {
-    setIsRecalculating(true)
-    setRecalculateMessage('')
+    const confirmed = confirm('Tem certeza que deseja recalcular as notas desta prova? Esta ação irá:\n\n• Manter correções manuais existentes\n• Recalcular totais e percentuais\n• Atualizar estatísticas')
 
-    const result = await recalculateResults(examId, undefined, recorrectEssays)
+    if (!confirmed) return
 
-    if (result.success) {
-      setRecalculateMessage(`✅ ${result.message}`)
-    } else {
-      setRecalculateMessage(`❌ ${result.message}`)
+    try {
+      setIsRecalculating(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recalculate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          exam_id: examId,
+          recorrect_essays: false // Não recorrigir dissertativas, só recalcular
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao recalcular')
+      }
+
+      const data = await response.json()
+
+      // Recarregar resultados
+      await fetchResults()
+
+      alert(`Recálculo concluído! ${data.updated_count} resultados atualizados.`)
+    } catch (error: any) {
+      console.error('Erro ao recalcular:', error)
+      alert(error.message || 'Erro ao recalcular resultados')
+    } finally {
+      setIsRecalculating(false)
     }
-
-    setIsRecalculating(false)
-
-    // Limpar mensagem após 5 segundos
-    setTimeout(() => setRecalculateMessage(''), 5000)
   }
 
   const handleRecalculateStudent = async (studentId: number) => {
@@ -334,16 +354,28 @@ export default function TeacherResultsPage() {
               Atualizar
             </Button>
             {selectedExam && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRecalculateExam(parseInt(selectedExam))}
-                disabled={isRecalculating}
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-              >
-                <Calculator className={`w-4 h-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
-                Recalcular Prova
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRecalculateExam(parseInt(selectedExam))}
+                  disabled={isRecalculating}
+                  className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                >
+                  <Calculator className={`w-4 h-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
+                  Recalcular Prova
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleFullRecorrection()}
+                  disabled={isRecalculating}
+                  className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
+                  Recorrigir Prova Inteira
+                </Button>
+              </>
             )}
             <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />

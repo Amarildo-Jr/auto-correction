@@ -402,11 +402,11 @@ export const notificationService = {
   },
 
   async markAsRead(id: string | number) {
-    return apiRequest(`/api/notifications/${id}/read`, { method: 'POST' });
+    return apiRequest(`/api/notifications/${id}/read`, { method: 'PATCH' });
   },
 
   async markAllAsRead() {
-    return apiRequest('/api/notifications/mark-all-read', { method: 'POST' });
+    return apiRequest('/api/notifications/mark-all-read', { method: 'PATCH' });
   },
 
   async deleteNotification(id: string | number) {
