@@ -217,10 +217,10 @@ export default function StudentResults() {
                       </TableCell>
                       <TableCell>
                         <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(result.percentage || 0)}`}>
-                          {result.points_earned?.toFixed(1) || 'N/A'}/{result.total_points?.toFixed(1) || 'N/A'}
+                          {(result.percentage || 0).toFixed(1)}%
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {result.percentage?.toFixed(1) || 'N/A'}%
+                          {(result.total_points || 0).toFixed(1)}/{(result.max_points || 0).toFixed(1)} pontos
                         </div>
                       </TableCell>
                       <TableCell>

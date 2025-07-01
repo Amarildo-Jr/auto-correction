@@ -1,276 +1,541 @@
 'use client'
 
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/hooks/useAuth"
-import api from "@/services/api"
-import { Bot, CheckCircle, Clock, FileText, HandIcon, Target, User } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
+import { useAppContext } from "@/contexts/AppContext"
+import {
+  AlertCircle,
+  BookOpen,
+  Calendar,
+  CheckCircle,
+  Eye,
+  FileText,
+  Save,
+  User,
+  Users,
+  Zap
+} from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 interface PendingCorrection {
   answer_id: number
-  question_id: number
-  question_text: string
-  expected_answer?: string
-  student_answer: string
   student_name: string
   student_email: string
   exam_title: string
   exam_id: number
-  max_points: number
-  similarity_score?: number
-  correction_method?: string
+  question_text: string
+  question_id: number
+  question_points: number
+  answer_text: string
   auto_correction_enabled: boolean
-  created_at: string
+  expected_answer?: string
+  submitted_at: string
+  enrollment_id: number
+}
+
+interface PendingExam {
+  exam_id: number
+  exam_title: string
+  pending_count: number
+  total_students: number
+  class_name?: string
 }
 
 export default function CorrectionReviewPage() {
-  const { user } = useAuth()
-  const [corrections, setCorrections] = useState<PendingCorrection[]>([])
-  const [loading, setLoading] = useState(true)
-  const [correcting, setCorrecting] = useState<number | null>(null)
-  const [scores, setScores] = useState<{ [key: number]: number }>({})
+  const { user, isAuthenticated } = useAppContext()
+  const router = useRouter()
+
+  const [pendingExams, setPendingExams] = useState<PendingExam[]>([])
+  const [pendingCorrections, setPendingCorrections] = useState<PendingCorrection[]>([])
+  const [selectedExam, setSelectedExam] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isCorrecting, setIsCorrecting] = useState(false)
+  const [corrections, setCorrections] = useState<Record<number, { points: number; feedback: string }>>({})
   const [error, setError] = useState('')
 
   useEffect(() => {
-    loadPendingCorrections()
-  }, [])
+    if (isAuthenticated && (user?.role === 'professor' || user?.role === 'admin')) {
+      loadPendingExams()
+    }
+  }, [isAuthenticated, user])
 
-  const loadPendingCorrections = async () => {
+  useEffect(() => {
+    if (selectedExam && isAuthenticated && (user?.role === 'professor' || user?.role === 'admin')) {
+      loadPendingCorrections(selectedExam)
+    }
+  }, [selectedExam, isAuthenticated, user])
+
+  // Verificar autorização
+  if (!isAuthenticated || (user?.role !== 'professor' && user?.role !== 'admin')) {
+    router.push('/login')
+    return null
+  }
+
+  const loadPendingExams = async () => {
     try {
-      const response = await api.get('/api/teacher/results/pending-corrections')
-      setCorrections(response.data.pending_corrections)
+      setIsLoading(true)
+      setError('')
 
-      // Inicializar scores
-      const initialScores: { [key: number]: number } = {}
-      response.data.pending_corrections.forEach((item: PendingCorrection) => {
-        initialScores[item.answer_id] = item.similarity_score || 0
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/pending-corrections-summary`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
-      setScores(initialScores)
-    } catch (err: any) {
-      setError('Erro ao carregar correções pendentes')
-      console.error(err)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao carregar correções pendentes')
+      }
+
+      const data = await response.json()
+      setPendingExams(data)
+    } catch (error: any) {
+      console.error('Erro ao carregar correções pendentes:', error)
+      setError(error.message || 'Erro ao carregar dados')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
-  const handleManualCorrection = async (answerId: number, points: number) => {
-    setCorrecting(answerId)
-    setError('')
-
+  const loadPendingCorrections = async (examId: number) => {
     try {
-      await api.post(`/api/teacher/manual-correction/${answerId}`, {
-        points_earned: points,
-        feedback: '' // Feedback opcional
+      setIsLoading(true)
+
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/pending-corrections/${examId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
 
-      // Remover da lista após correção
-      setCorrections(prev => prev.filter(item => item.answer_id !== answerId))
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao realizar correção')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao carregar correções da prova')
+      }
+
+      const data = await response.json()
+      setPendingCorrections(data)
+
+      // Inicializar correções com valores padrão
+      const initialCorrections: Record<number, { points: number; feedback: string }> = {}
+      data.forEach((correction: PendingCorrection) => {
+        initialCorrections[correction.answer_id] = {
+          points: 0,
+          feedback: ''
+        }
+      })
+      setCorrections(initialCorrections)
+    } catch (error: any) {
+      console.error('Erro ao carregar correções da prova:', error)
+      setError(error.message || 'Erro ao carregar correções')
     } finally {
-      setCorrecting(null)
+      setIsLoading(false)
     }
   }
 
-  const updateScore = (answerId: number, score: number) => {
-    setScores(prev => ({
-      ...prev,
-      [answerId]: score
-    }))
+  const handleSingleCorrection = async (answerId: number) => {
+    const correction = corrections[answerId]
+    if (!correction || correction.points < 0) {
+      alert('Insira uma pontuação válida')
+      return
+    }
+
+    try {
+      setIsCorrecting(true)
+
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/manual-correction/${answerId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          points_earned: correction.points,
+          feedback: correction.feedback
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao salvar correção')
+      }
+
+      // Remover da lista de pendentes
+      setPendingCorrections(prev => prev.filter(p => p.answer_id !== answerId))
+
+      // Atualizar contadores
+      if (selectedExam) {
+        setPendingExams(prev => prev.map(exam =>
+          exam.exam_id === selectedExam
+            ? { ...exam, pending_count: Math.max(0, exam.pending_count - 1) }
+            : exam
+        ))
+      }
+
+      alert('Correção salva com sucesso!')
+    } catch (error: any) {
+      console.error('Erro ao salvar correção:', error)
+      alert(error.message || 'Erro ao salvar correção')
+    } finally {
+      setIsCorrecting(false)
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
+  const handleAutoCorrection = async (answerId: number) => {
+    try {
+      setIsCorrecting(true)
+
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/auto-correct-single`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          answer_id: answerId
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro na correção automática')
+      }
+
+      const data = await response.json()
+
+      // Remover da lista de pendentes
+      setPendingCorrections(prev => prev.filter(p => p.answer_id !== answerId))
+
+      // Atualizar contadores
+      if (selectedExam) {
+        setPendingExams(prev => prev.map(exam =>
+          exam.exam_id === selectedExam
+            ? { ...exam, pending_count: Math.max(0, exam.pending_count - 1) }
+            : exam
+        ))
+      }
+
+      alert(`Correção automática concluída! Pontuação: ${data.points_earned.toFixed(1).replace('.', ',')}/${data.max_points.toFixed(1).replace('.', ',')}`)
+    } catch (error: any) {
+      console.error('Erro na correção automática:', error)
+      alert(error.message || 'Erro na correção automática')
+    } finally {
+      setIsCorrecting(false)
+    }
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  if (isLoading && !selectedExam) {
+    return <LoadingSpinner />
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
+    <div className="max-w-7xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Correção de Questões Dissertativas</h1>
+        <h1 className="text-3xl font-bold mb-2">Correções Pendentes</h1>
         <p className="text-muted-foreground">
-          Respostas pendentes de correção manual
+          Gerencie questões dissertativas que precisam de correção manual
         </p>
       </div>
 
       {error && (
         <Card className="mb-6 border-red-200 bg-red-50">
           <CardContent className="p-4">
-            <p className="text-red-600 text-sm">{error}</p>
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-red-800">Erro</h3>
+                <p className="text-red-700 text-sm mt-1">{error}</p>
+                <Button onClick={loadPendingExams} className="mt-3" size="sm">
+                  Tentar novamente
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {corrections.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Todas as correções estão em dia!</h3>
-            <p className="text-muted-foreground">
-              Não há respostas dissertativas pendentes de correção.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-500" />
-              <span className="text-sm text-muted-foreground">
-                {corrections.length} resposta{corrections.length !== 1 ? 's' : ''} pendente{corrections.length !== 1 ? 's' : ''}
-              </span>
+      {/* Lista de Provas com Correções Pendentes */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Provas com Correções Pendentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {pendingExams.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle className="w-16 w-16 text-green-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Todas as correções em dia!</h3>
+              <p className="text-muted-foreground">
+                Não há questões dissertativas pendentes de correção no momento.
+              </p>
             </div>
-          </div>
-
-          {corrections.map((correction) => (
-            <Card key={correction.answer_id} className="border-l-4 border-l-amber-500">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-lg">
-                      {correction.exam_title}
-                    </CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {correction.student_name}
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Prova</TableHead>
+                  <TableHead>Turma</TableHead>
+                  <TableHead>Pendentes</TableHead>
+                  <TableHead>Total Alunos</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingExams.map((exam) => (
+                  <TableRow
+                    key={exam.exam_id}
+                    className={selectedExam === exam.exam_id ? 'bg-blue-50' : ''}
+                  >
+                    <TableCell>
+                      <div>
+                        <h3 className="font-medium">{exam.exam_title}</h3>
+                        <p className="text-sm text-muted-foreground">ID: {exam.exam_id}</p>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{exam.class_name || 'Sem turma'}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-orange-100 text-orange-800">
+                        {exam.pending_count} pendentes
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-1">
-                        <Target className="w-4 h-4" />
-                        {correction.max_points} pontos
+                        <Users className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">{exam.total_students}</span>
                       </div>
-                      {correction.auto_correction_enabled && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <Bot className="w-3 h-3" />
-                          Correção Auto Habilitada
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setSelectedExam(exam.exam_id)}
+                          variant={selectedExam === exam.exam_id ? 'default' : 'outline'}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          {selectedExam === exam.exam_id ? 'Selecionada' : 'Corrigir'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/teacher/exams/${exam.exam_id}`)}
+                        >
+                          Ver Prova
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-              <CardContent className="space-y-6">
-                {/* Questão */}
-                <div>
-                  <Label className="text-base font-medium flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4" />
-                    Questão
-                  </Label>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm">{correction.question_text}</p>
-                  </div>
-                </div>
-
-                {/* Resposta Esperada */}
-                {correction.expected_answer && (
-                  <div>
-                    <Label className="text-base font-medium flex items-center gap-2 mb-2">
-                      <Target className="w-4 h-4 text-green-600" />
-                      Resposta Esperada (Gabarito)
-                    </Label>
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <p className="text-sm text-green-800">{correction.expected_answer}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Resposta do Estudante */}
-                <div>
-                  <Label className="text-base font-medium flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4 text-blue-600" />
-                    Resposta do Estudante
-                  </Label>
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800">{correction.student_answer}</p>
-                  </div>
-                </div>
-
-                {/* Score de Similaridade (se disponível) */}
-                {correction.similarity_score !== null && correction.similarity_score !== undefined && (
-                  <div>
-                    <Label className="text-base font-medium flex items-center gap-2 mb-2">
-                      <Bot className="w-4 h-4 text-purple-600" />
-                      Score de Similaridade Automática
-                    </Label>
-                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl font-bold text-purple-700">
-                          {correction.similarity_score.toFixed(1)}%
-                        </div>
-                        <div className="text-sm text-purple-600">
-                          <p>Similaridade semântica calculada automaticamente</p>
-                          <p className="text-xs mt-1">
-                            Sugestão: {((correction.similarity_score / 100) * correction.max_points).toFixed(1)} pontos
+      {/* Correções Individuais */}
+      {selectedExam && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Correções Individuais
+              <Badge className="ml-2">
+                {pendingCorrections.length} questões
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : pendingCorrections.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Todas correções concluídas!</h3>
+                <p className="text-muted-foreground">
+                  Não há mais questões pendentes nesta prova.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {pendingCorrections.map((correction, index) => (
+                  <Card key={correction.answer_id} className="border border-gray-200">
+                    <CardContent className="p-6">
+                      {/* Cabeçalho */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {correction.student_name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {correction.student_email}
                           </p>
                         </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            {formatDateTime(correction.submitted_at)}
+                          </div>
+                          <div className="text-sm font-medium mt-1">
+                            Questão {index + 1} - {correction.question_points.toFixed(1).replace('.', ',')} pontos
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )}
 
-                <Separator />
+                      <Separator className="my-4" />
 
-                {/* Correção Manual */}
-                <div className="space-y-4">
-                  <Label className="text-base font-medium flex items-center gap-2">
-                    <HandIcon className="w-4 h-4 text-amber-600" />
-                    Correção Manual
-                  </Label>
+                      {/* Questão */}
+                      <div className="mb-4">
+                        <Label className="text-base font-medium">Questão:</Label>
+                        <div className="bg-gray-50 p-3 rounded-lg mt-2">
+                          <p className="text-sm">{correction.question_text}</p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-end gap-4">
-                    <div className="flex-1">
-                      <Label htmlFor={`score-${correction.answer_id}`} className="text-sm">
-                        Pontuação Atribuída
-                      </Label>
-                      <Input
-                        id={`score-${correction.answer_id}`}
-                        type="number"
-                        min="0"
-                        max={correction.max_points}
-                        step="0.1"
-                        value={scores[correction.answer_id] || 0}
-                        onChange={(e) => updateScore(correction.answer_id, parseFloat(e.target.value) || 0)}
-                        className="mt-1"
-                        placeholder="0.0"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Máximo: {correction.max_points} pontos
-                      </p>
-                    </div>
+                      {/* Resposta do Aluno */}
+                      <div className="mb-4">
+                        <Label className="text-base font-medium flex items-center gap-2">
+                          <User className="w-4 h-4 text-blue-600" />
+                          Resposta do Aluno:
+                        </Label>
+                        <div className="bg-blue-50 p-3 rounded-lg mt-2 border border-blue-200">
+                          <p className="text-sm text-blue-800">{correction.answer_text}</p>
+                        </div>
+                      </div>
 
-                    <Button
-                      onClick={() => handleManualCorrection(correction.answer_id, scores[correction.answer_id] || 0)}
-                      disabled={correcting === correction.answer_id}
-                      className="min-w-[120px]"
-                    >
-                      {correcting === correction.answer_id ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Salvando...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Confirmar
-                        </>
+                      {/* Resposta Esperada (se disponível) */}
+                      {correction.expected_answer && (
+                        <div className="mb-4">
+                          <Label className="text-base font-medium text-green-700">
+                            Resposta Esperada (Gabarito):
+                          </Label>
+                          <div className="bg-green-50 p-3 rounded-lg mt-2 border border-green-200">
+                            <p className="text-sm text-green-800">{correction.expected_answer}</p>
+                          </div>
+                        </div>
                       )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+                      <Separator className="my-4" />
+
+                      {/* Correção */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`points-${correction.answer_id}`} className="text-sm font-medium">
+                            Pontuação (máx: {correction.question_points.toFixed(1).replace('.', ',')})
+                          </Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              id={`points-${correction.answer_id}`}
+                              type="text"
+                              value={corrections[correction.answer_id]?.points.toString().replace('.', ',') || '0'}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(',', '.')
+                                const numValue = Math.max(0, Math.min(correction.question_points, parseFloat(value) || 0))
+                                setCorrections(prev => ({
+                                  ...prev,
+                                  [correction.answer_id]: {
+                                    ...prev[correction.answer_id],
+                                    points: numValue
+                                  }
+                                }))
+                              }}
+                              placeholder="0,0"
+                              className="w-24"
+                            />
+                            <Button
+                              onClick={() => handleSingleCorrection(correction.answer_id)}
+                              size="sm"
+                              disabled={isCorrecting}
+                            >
+                              {isCorrecting ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                  Salvando...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-3 h-3 mr-1" />
+                                  Salvar
+                                </>
+                              )}
+                            </Button>
+
+                            {/* Botão de correção automática */}
+                            {correction.auto_correction_enabled && correction.expected_answer && (
+                              <Button
+                                onClick={() => handleAutoCorrection(correction.answer_id)}
+                                size="sm"
+                                variant="outline"
+                                disabled={isCorrecting}
+                              >
+                                {isCorrecting ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600 mr-1"></div>
+                                    Corrigindo...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Zap className="w-3 h-3 mr-1" />
+                                    Auto
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor={`feedback-${correction.answer_id}`} className="text-sm font-medium">
+                            Feedback (opcional)
+                          </Label>
+                          <Textarea
+                            id={`feedback-${correction.answer_id}`}
+                            value={corrections[correction.answer_id]?.feedback || ''}
+                            onChange={(e) => setCorrections(prev => ({
+                              ...prev,
+                              [correction.answer_id]: {
+                                ...prev[correction.answer_id],
+                                feedback: e.target.value
+                              }
+                            }))}
+                            placeholder="Comentários sobre a resposta..."
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   )

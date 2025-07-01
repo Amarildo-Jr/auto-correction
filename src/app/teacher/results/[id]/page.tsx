@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAppContext } from "@/contexts/AppContext"
 import api from "@/services/api"
 import {
   ArrowLeft,
+  BookOpen,
   Bot,
   CheckCircle,
   Clock,
@@ -21,7 +21,8 @@ import {
   Save,
   Target,
   User,
-  XCircle
+  XCircle,
+  Zap
 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -77,6 +78,8 @@ export default function StudentResultDetailPage() {
   const [editScore, setEditScore] = useState<number>(0)
   const [editFeedback, setEditFeedback] = useState<string>('')
   const [saving, setSaving] = useState(false)
+  const [manualCorrections, setManualCorrections] = useState<Record<number, { points_earned: number; feedback: string }>>({})
+  const [correctingAnswers, setCorrectingAnswers] = useState<Set<number>>(new Set())
 
   // Verificar autorização
   useEffect(() => {
@@ -164,6 +167,91 @@ export default function StudentResultDetailPage() {
     if (percentage >= 80) return 'text-green-600 bg-green-50'
     if (percentage >= 60) return 'text-yellow-600 bg-yellow-50'
     return 'text-red-600 bg-red-50'
+  }
+
+  const handleManualCorrection = async (answerId: number) => {
+    const correction = manualCorrections[answerId]
+    if (!correction || correction.points_earned === undefined) {
+      alert('Insira uma pontuação válida')
+      return
+    }
+
+    setCorrectingAnswers(prev => new Set(Array.from(prev).concat([answerId])))
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/manual-correction/${answerId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          points_earned: correction.points_earned,
+          feedback: correction.feedback || ''
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao salvar correção')
+      }
+
+      const data = await response.json()
+
+      // Recarregar dados
+      await loadStudentResult()
+
+      alert('Correção salva com sucesso!')
+    } catch (error: any) {
+      console.error('Erro ao salvar correção:', error)
+      alert(error.message || 'Erro ao salvar correção')
+    } finally {
+      setCorrectingAnswers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(answerId)
+        return newSet
+      })
+    }
+  }
+
+  const handleAutoCorrection = async (answerId: number) => {
+    setCorrectingAnswers(prev => new Set(Array.from(prev).concat([answerId])))
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/auto-correct-single`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          answer_id: answerId
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro na correção automática')
+      }
+
+      const data = await response.json()
+
+      // Recarregar dados
+      await loadStudentResult()
+
+      alert(`Correção automática concluída! Pontuação: ${data.points_earned.toFixed(1).replace('.', ',')}/${data.max_points.toFixed(1).replace('.', ',')}`)
+    } catch (error: any) {
+      console.error('Erro na correção automática:', error)
+      alert(error.message || 'Erro na correção automática')
+    } finally {
+      setCorrectingAnswers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(answerId)
+        return newSet
+      })
+    }
   }
 
   if (loading) {
@@ -373,43 +461,127 @@ export default function StudentResultDetailPage() {
               </div>
 
               {/* Correção Manual (apenas para dissertativas) */}
-              {answer.question_type === 'essay' && editingAnswer === answer.id && (
-                <>
-                  <Separator />
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <Edit3 className="w-4 h-4" />
-                      Correção Manual
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="score">Pontuação (máximo: {answer.max_points})</Label>
+              {answer.question_type === 'essay' && (
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <Label className="text-base font-medium flex items-center gap-2 mb-3">
+                    <BookOpen className="w-4 h-4 text-purple-600" />
+                    Correção Manual
+                  </Label>
+
+                  <div className="space-y-3">
+                    {/* Input de pontuação */}
+                    <div>
+                      <Label htmlFor={`points-${answer.id}`} className="text-sm font-medium">
+                        Pontuação Obtida (máx: {answer.max_points.toFixed(1).replace('.', ',')})
+                      </Label>
+                      <div className="flex gap-2 mt-1">
                         <Input
-                          id="score"
-                          type="number"
-                          min="0"
-                          max={answer.max_points}
-                          step="0.1"
-                          value={editScore}
-                          onChange={(e) => setEditScore(parseFloat(e.target.value) || 0)}
-                          className="mt-1"
+                          id={`points-${answer.id}`}
+                          type="text"
+                          value={manualCorrections[answer.id]?.points_earned?.toString().replace('.', ',') || ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(',', '.')
+                            const numValue = parseFloat(value) || 0
+                            setManualCorrections(prev => ({
+                              ...prev,
+                              [answer.id]: {
+                                ...prev[answer.id],
+                                points_earned: numValue
+                              }
+                            }))
+                          }}
+                          placeholder="0,0"
+                          className="w-24"
                         />
-                      </div>
-                      <div>
-                        <Label htmlFor="feedback">Feedback (opcional)</Label>
-                        <Textarea
-                          id="feedback"
-                          value={editFeedback}
-                          onChange={(e) => setEditFeedback(e.target.value)}
-                          placeholder="Comentários sobre a resposta..."
-                          className="mt-1"
-                          rows={3}
-                        />
+                        <Button
+                          onClick={() => handleManualCorrection(answer.id)}
+                          size="sm"
+                          disabled={correctingAnswers.has(answer.id)}
+                        >
+                          {correctingAnswers.has(answer.id) ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-3 h-3 mr-1" />
+                              Salvar
+                            </>
+                          )}
+                        </Button>
+
+                        {/* Botão para recorrigir automaticamente */}
+                        {answer.auto_correction_enabled && answer.expected_answer && (
+                          <Button
+                            onClick={() => handleAutoCorrection(answer.id)}
+                            size="sm"
+                            variant="outline"
+                            disabled={correctingAnswers.has(answer.id)}
+                          >
+                            {correctingAnswers.has(answer.id) ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600 mr-1"></div>
+                                Corrigindo...
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="w-3 h-3 mr-1" />
+                                Recorrigir Auto
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </div>
+
+                    {/* Feedback opcional */}
+                    <div>
+                      <Label htmlFor={`feedback-${answer.id}`} className="text-sm font-medium">
+                        Feedback (opcional)
+                      </Label>
+                      <Textarea
+                        id={`feedback-${answer.id}`}
+                        value={manualCorrections[answer.id]?.feedback || ''}
+                        onChange={(e) => setManualCorrections(prev => ({
+                          ...prev,
+                          [answer.id]: {
+                            ...prev[answer.id],
+                            feedback: e.target.value
+                          }
+                        }))}
+                        placeholder="Comentários sobre a resposta..."
+                        rows={2}
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
-                </>
+                </div>
               )}
+
+              {/* Status da correção */}
+              <div className="flex items-center justify-between pt-3 border-t">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-medium">Status:</div>
+                  <Badge className={
+                    answer.question_type === 'essay'
+                      ? (answer.points_earned !== null && answer.points_earned !== undefined)
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                      : 'bg-green-100 text-green-800'
+                  }>
+                    {answer.question_type === 'essay'
+                      ? (answer.points_earned !== null && answer.points_earned !== undefined)
+                        ? 'Corrigida'
+                        : 'Pendente'
+                      : 'Corrigida'
+                    }
+                  </Badge>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Pontos: {(answer.points_earned || 0).toFixed(1).replace('.', ',')} / {answer.max_points.toFixed(1).replace('.', ',')}
+                </div>
+              </div>
 
               {/* Feedback do Professor */}
               {answer.feedback && (

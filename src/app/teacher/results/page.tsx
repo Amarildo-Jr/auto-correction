@@ -10,7 +10,16 @@ import { useAppContext } from "@/contexts/AppContext"
 import { useClasses } from "@/hooks/useClasses"
 import { useExams } from "@/hooks/useExams"
 import { useTeacherResults } from "@/hooks/useTeacherResults"
-import { BarChart3, Calculator, Download, Eye, Filter, RefreshCw, Search, TrendingUp } from "lucide-react"
+import {
+  BarChart3,
+  Calculator,
+  Download,
+  Eye,
+  Filter,
+  RefreshCw,
+  Search,
+  TrendingUp
+} from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -130,6 +139,81 @@ export default function TeacherResultsPage() {
 
     // Limpar mensagem após 5 segundos
     setTimeout(() => setRecalculateMessage(''), 5000)
+  }
+
+  const handleRecalculate = async () => {
+    if (!selectedExam) return
+
+    try {
+      setIsRecalculating(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recalculate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          exam_id: parseInt(selectedExam),
+          recorrect_essays: recorrectEssays
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao recalcular')
+      }
+
+      const data = await response.json()
+
+      // Recarregar resultados
+      await fetchResults()
+
+      alert(`Recálculo concluído! ${data.updated_count} resultados atualizados.`)
+    } catch (error: any) {
+      console.error('Erro ao recalcular:', error)
+      alert(error.message || 'Erro ao recalcular resultados')
+    } finally {
+      setIsRecalculating(false)
+    }
+  }
+
+  const handleFullRecorrection = async () => {
+    if (!selectedExam) return
+
+    const confirmed = confirm('Tem certeza que deseja recorrigir TODAS as provas do zero? Esta ação irá:\n\n• Recorrigir todas as questões objetivas\n• Recorrigir questões dissertativas com correção automática habilitada\n• Sobrescrever correções manuais existentes\n\nEsta ação não pode ser desfeita.')
+
+    if (!confirmed) return
+
+    try {
+      setIsRecalculating(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/full-recorrection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          exam_id: parseInt(selectedExam)
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro na recorreção completa')
+      }
+
+      const data = await response.json()
+
+      // Recarregar resultados
+      await fetchResults()
+
+      alert(`Recorreção completa concluída!\n\n• ${data.updated_count} provas recorrigidas\n• ${data.essay_corrected} questões dissertativas corrigidas automaticamente\n• ${data.objective_corrected} questões objetivas corrigidas`)
+    } catch (error: any) {
+      console.error('Erro na recorreção completa:', error)
+      alert(error.message || 'Erro na recorreção completa')
+    } finally {
+      setIsRecalculating(false)
+    }
   }
 
   const stats = calculateStats()
@@ -349,19 +433,19 @@ export default function TeacherResultsPage() {
         </CardContent>
       </Card>
 
-      {/* Seção de Recálculo por Prova */}
+      {/* Recálculo de Notas */}
       {selectedExam && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calculator className="w-5 h-5" />
-              Recálculo de Notas
+              Ferramentas de Correção
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Recalcular todas as notas da prova selecionada usando a lógica de correção atual.
+                Ferramentas para recalcular e recorrigir provas da prova selecionada.
               </p>
 
               <div className="flex items-center space-x-2">
@@ -385,18 +469,51 @@ export default function TeacherResultsPage() {
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex gap-3">
                 <Button
                   onClick={() => handleRecalculateExam(parseInt(selectedExam))}
                   disabled={isRecalculating}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   {isRecalculating ? (
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Recalculando...
+                    </>
                   ) : (
-                    <Calculator className="w-4 h-4 mr-2" />
+                    <>
+                      <Calculator className="w-4 h-4 mr-2" />
+                      Recalcular Notas
+                    </>
                   )}
-                  Recalcular Prova
                 </Button>
+
+                <Button
+                  onClick={() => handleRecalculateExam(parseInt(selectedExam))}
+                  disabled={isRecalculating}
+                  variant="outline"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                >
+                  {isRecalculating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                      Recorrigindo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Recorrigir Provas
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="text-xs text-amber-700 bg-amber-50 p-3 rounded border border-amber-200">
+                <p className="font-medium">ℹ️ Diferenças:</p>
+                <ul className="mt-1 space-y-1 list-disc list-inside">
+                  <li><strong>Recalcular Notas:</strong> Mantém correções existentes e recalcula totais</li>
+                  <li><strong>Recorrigir Provas:</strong> Corrige tudo do zero (objetivas + dissertativas habilitadas)</li>
+                </ul>
               </div>
             </div>
           </CardContent>
