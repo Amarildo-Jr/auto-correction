@@ -107,6 +107,23 @@ export const useNotifications = () => {
     }
   }, []);
 
+  const deleteAllNotifications = useCallback(async () => {
+    try {
+      await notificationService.deleteAllNotifications();
+      
+      setState(prev => ({
+        ...prev,
+        notifications: [],
+        unreadCount: 0
+      }));
+    } catch (error: any) {
+      setState(prev => ({
+        ...prev,
+        error: error.message || 'Erro ao excluir todas as notificações'
+      }));
+    }
+  }, []);
+
   const createNotification = useCallback(async (notificationData: {
     user_id: number;
     type: string;
@@ -199,6 +216,7 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
     createNotification,
     getUnreadNotifications,
     getNotificationsByType,

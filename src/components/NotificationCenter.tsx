@@ -20,6 +20,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
     getPriorityColor,
     getTypeIcon
   } = useNotifications();
@@ -113,6 +114,21 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
                   >
                     <CheckCheck className="h-3 w-3 mr-1" />
                     Marcar todas
+                  </Button>
+                )}
+                {notifications.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm('Excluir TODAS as notificações?')) {
+                        deleteAllNotifications();
+                      }
+                    }}
+                    className="text-xs h-6 px-2 text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Excluir todas
                   </Button>
                 )}
                 <Badge variant="secondary" className="text-xs">

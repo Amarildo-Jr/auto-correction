@@ -413,6 +413,10 @@ export const notificationService = {
     return apiRequest(`/api/notifications/${id}`, { method: 'DELETE' });
   },
 
+  async deleteAllNotifications() {
+    return apiRequest('/api/notifications/delete-all', { method: 'DELETE' });
+  },
+
   async createNotification(notificationData: any) {
     return apiRequest('/api/notifications', {
       method: 'POST',

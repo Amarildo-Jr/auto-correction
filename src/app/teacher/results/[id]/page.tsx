@@ -239,29 +239,29 @@ export default function StudentResultDetailPage() {
   }
 
   const handleRecorrectExam = async () => {
-    if (!result?.exam_id) return
+    if (!result?.enrollment_id) return
 
-    const confirmed = confirm('Tem certeza que deseja recorrigir TODA a prova? Esta ação irá:\n\n• Recorrigir todas as questões objetivas\n• Recorrigir questões dissertativas com correção automática\n• ZERAR correções manuais existentes\n• Recalcular nota total\n\nEsta ação não pode ser desfeita.')
+    const confirmed = confirm('Tem certeza que deseja recorrigir ESTA prova? Esta ação irá:\n\n• Recorrigir todas as questões objetivas do zero\n• Recorrigir questões dissertativas com correção automática habilitada\n• ZERAR correções manuais existentes nesta prova\n• Recalcular nota total desta prova\n\nEsta ação não pode ser desfeita.')
 
     if (!confirmed) return
 
     try {
       setSaving(true)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/full-recorrection`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recorrect-enrollment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          exam_id: result.exam_id
+          enrollment_id: result.enrollment_id
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro na recorreção completa')
+        throw new Error(errorData.error || 'Erro na recorreção')
       }
 
       const data = await response.json()
@@ -269,9 +269,9 @@ export default function StudentResultDetailPage() {
       // Recarregar resultado
       await loadStudentResult()
 
-      alert(`Recorreção completa concluída!\n\n• Prova recorrigida\n• ${data.essay_corrected || 0} questões dissertativas corrigidas automaticamente\n• ${data.objective_corrected || 0} questões objetivas corrigidas`)
+      alert(`Recorreção concluída!\n\n• Prova recorrigida\n• ${data.essay_corrected || 0} questões dissertativas corrigidas automaticamente\n• ${data.objective_corrected || 0} questões objetivas corrigidas\n• Nota: ${data.total_points.toFixed(1)}/${data.max_points.toFixed(1)} (${data.percentage.toFixed(1)}%)`)
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro na recorreção completa')
+      setError(err.response?.data?.error || 'Erro na recorreção')
     } finally {
       setSaving(false)
     }
@@ -381,11 +381,11 @@ export default function StudentResultDetailPage() {
               onClick={() => handleRecorrectExam()}
               variant="outline"
               size="sm"
-              disabled={Object.keys(correctingAnswers).length > 0}
+              disabled={saving || correctingAnswers.size > 0}
               className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
             >
               <Zap className="w-4 h-4 mr-2" />
-              Recorrigir Prova Inteira
+              Recorrigir Esta Prova
             </Button>
           </div>
         </CardContent>
