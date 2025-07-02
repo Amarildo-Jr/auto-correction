@@ -54,6 +54,7 @@ interface StudentAnswer {
 
 interface StudentExamResult {
   id: number
+  enrollment_id: number
   student_name: string
   student_email: string
   exam_title: string
@@ -179,7 +180,11 @@ export default function StudentResultDetailPage() {
       return
     }
 
-    setCorrectingAnswers(prev => new Set([...prev, answerId]))
+    setCorrectingAnswers(prev => {
+      const newSet = new Set(prev)
+      newSet.add(answerId)
+      return newSet
+    })
 
     try {
       const token = localStorage.getItem('token')
@@ -219,7 +224,11 @@ export default function StudentResultDetailPage() {
   }
 
   const handleAutoCorrection = async (answerId: number) => {
-    setCorrectingAnswers(prev => new Set([...prev, answerId]))
+    setCorrectingAnswers(prev => {
+      const newSet = new Set(prev)
+      newSet.add(answerId)
+      return newSet
+    })
 
     try {
       await api.post(`/api/teacher/auto-correct-single`, {
