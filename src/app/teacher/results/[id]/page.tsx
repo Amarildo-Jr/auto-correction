@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   BookOpen,
   Bot,
+  Calculator,
   CheckCircle,
   Clock,
   Edit3,
@@ -178,7 +179,7 @@ export default function StudentResultDetailPage() {
       return
     }
 
-    setCorrectingAnswers(prev => new Set(Array.from(prev).concat([answerId])))
+    setCorrectingAnswers(prev => new Set([...prev, answerId]))
 
     try {
       const token = localStorage.getItem('token')
@@ -235,6 +236,44 @@ export default function StudentResultDetailPage() {
         newSet.delete(answerId)
         return newSet
       })
+    }
+  }
+
+  const handleRecalculateStudent = async () => {
+    if (!result) return
+
+    const confirmed = confirm('Tem certeza que deseja recalcular as notas desta prova? Esta ação irá:\n\n• Manter correções manuais existentes\n• Usar similaridade para calcular pontos de dissertativas sem correção automática\n• Recalcular totais e percentuais')
+
+    if (!confirmed) return
+
+    try {
+      setSaving(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recalculate-single`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          enrollment_id: parseInt(enrollmentId)
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao recalcular')
+      }
+
+      const data = await response.json()
+
+      // Recarregar resultado
+      await loadStudentResult()
+
+      alert(`Recálculo concluído!\n\n• Total pontos: ${data.total_points.toFixed(1)}/${data.max_points.toFixed(1)}\n• Percentual: ${data.percentage.toFixed(1)}%`)
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro na recálculo')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -375,6 +414,17 @@ export default function StudentResultDetailPage() {
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
+            </Button>
+
+            <Button
+              onClick={() => handleRecalculateStudent()}
+              variant="outline"
+              size="sm"
+              disabled={saving || correctingAnswers.size > 0}
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              Recalcular Notas
             </Button>
 
             <Button
