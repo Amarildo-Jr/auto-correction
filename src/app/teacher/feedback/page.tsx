@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-import { api } from '@/services/api'
+import api from '@/services/api'
 import { CheckCircle, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

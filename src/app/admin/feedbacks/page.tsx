@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { api } from '@/services/api'
+import api from '@/services/api'
 import {
   AlertTriangle,
   CheckCircle,
@@ -469,7 +469,7 @@ export default function AdminFeedbacksPage() {
                           </div>
                           {evaluation.additional_comments && (
                             <p className="text-sm text-gray-600 mt-2">
-                              "{evaluation.additional_comments.substring(0, 100)}..."
+                              &quot;{evaluation.additional_comments.substring(0, 100)}...&quot;
                             </p>
                           )}
                         </div>
