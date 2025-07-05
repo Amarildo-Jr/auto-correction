@@ -11,6 +11,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   LogOut,
+  Star,
   TextSearch
 } from 'lucide-react'
 import Link from 'next/link'
@@ -56,6 +57,11 @@ export function TeacherSidebar() {
       title: 'Resultados',
       href: '/teacher/results',
       icon: BarChart
+    },
+    {
+      title: 'Avaliar Plataforma',
+      href: '/teacher/feedback',
+      icon: Star
     },
     {
       title: 'Suporte',

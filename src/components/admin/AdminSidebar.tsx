@@ -9,6 +9,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   LogOut,
+  MessageSquare,
   Settings,
   Users
 } from 'lucide-react'
@@ -45,6 +46,11 @@ export function AdminSidebar() {
       title: 'Provas',
       href: '/admin/exams',
       icon: FileText
+    },
+    {
+      title: 'Feedbacks',
+      href: '/admin/feedbacks',
+      icon: MessageSquare
     },
     {
       title: 'Configurações',

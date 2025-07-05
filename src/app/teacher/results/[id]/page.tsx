@@ -99,11 +99,16 @@ export default function StudentResultDetailPage() {
   const loadStudentResult = async () => {
     try {
       setLoading(true)
+      setError('') // Limpar erro anterior
+      console.log('📥 Carregando resultado para enrollment_id:', enrollmentId)
+
       const response = await api.get(`/api/teacher/student-exam/${enrollmentId}`)
+      console.log('✅ Resultado carregado:', response.data)
+
       setResult(response.data)
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao carregar resultado do aluno')
-      console.error(err)
+      console.error('❌ Erro ao carregar resultado:', err)
+      setError(err.response?.data?.error || err.message || 'Erro ao carregar resultado do aluno')
     } finally {
       setLoading(false)
     }
@@ -251,12 +256,16 @@ export default function StudentResultDetailPage() {
   const handleRecalculateStudent = async () => {
     if (!result) return
 
+    console.log('🔄 Iniciando recálculo para enrollment_id:', enrollmentId)
+
     const confirmed = confirm('Tem certeza que deseja recalcular as notas desta prova? Esta ação irá:\n\n• Manter correções manuais existentes\n• Usar similaridade para calcular pontos de dissertativas sem correção automática\n• Recalcular totais e percentuais')
 
     if (!confirmed) return
 
     try {
       setSaving(true)
+      console.log('📡 Enviando requisição para:', `${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recalculate-single`)
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recalculate-single`, {
         method: 'POST',
         headers: {
@@ -268,26 +277,39 @@ export default function StudentResultDetailPage() {
         })
       })
 
+      console.log('📡 Response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Erro da API:', errorData)
         throw new Error(errorData.error || 'Erro ao recalcular')
       }
 
       const data = await response.json()
+      console.log('✅ Dados recebidos:', data)
 
       // Recarregar resultado
       await loadStudentResult()
 
       alert(`Recálculo concluído!\n\n• Total pontos: ${data.total_points.toFixed(1)}/${data.max_points.toFixed(1)}\n• Percentual: ${data.percentage.toFixed(1)}%`)
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro na recálculo')
+      console.error('❌ Erro no recálculo:', err)
+      setError(err.message || 'Erro no recálculo')
     } finally {
       setSaving(false)
     }
   }
 
   const handleRecorrectExam = async () => {
-    if (!result?.enrollment_id) return
+    // Usar enrollmentId diretamente em vez de depender de result.enrollment_id
+    if (!enrollmentId) {
+      console.error('❌ enrollment_id não encontrado')
+      setError('Erro: ID da matrícula não encontrado')
+      return
+    }
+
+    console.log('🔧 Iniciando recorreção para enrollment_id:', enrollmentId)
+    console.log('📊 Dados do result:', result)
 
     const confirmed = confirm('Tem certeza que deseja recorrigir ESTA prova? Esta ação irá:\n\n• Recorrigir todas as questões objetivas do zero\n• Recorrigir questões dissertativas com correção automática habilitada\n• ZERAR correções manuais existentes nesta prova\n• Recalcular nota total desta prova\n\nEsta ação não pode ser desfeita.')
 
@@ -295,6 +317,7 @@ export default function StudentResultDetailPage() {
 
     try {
       setSaving(true)
+      console.log('📡 Enviando requisição para:', `${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recorrect-enrollment`)
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teacher/results/recorrect-enrollment`, {
         method: 'POST',
@@ -303,23 +326,28 @@ export default function StudentResultDetailPage() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          enrollment_id: result.enrollment_id
+          enrollment_id: parseInt(enrollmentId)
         })
       })
 
+      console.log('📡 Response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Erro da API:', errorData)
         throw new Error(errorData.error || 'Erro na recorreção')
       }
 
       const data = await response.json()
+      console.log('✅ Dados recebidos:', data)
 
       // Recarregar resultado
       await loadStudentResult()
 
       alert(`Recorreção concluída!\n\n• Prova recorrigida\n• ${data.essay_corrected || 0} questões dissertativas corrigidas automaticamente\n• ${data.objective_corrected || 0} questões objetivas corrigidas\n• Nota: ${data.total_points.toFixed(1)}/${data.max_points.toFixed(1)} (${data.percentage.toFixed(1)}%)`)
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro na recorreção')
+      console.error('❌ Erro na recorreção:', err)
+      setError(err.message || 'Erro na recorreção')
     } finally {
       setSaving(false)
     }

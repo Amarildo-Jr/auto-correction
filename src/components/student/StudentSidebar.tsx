@@ -10,7 +10,8 @@ import {
   HelpCircle,
   LayoutDashboard,
   LogOut,
-  MessageSquare
+  MessageSquare,
+  Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -50,6 +51,11 @@ export function StudentSidebar() {
       title: 'Fórum',
       href: '/student/forum',
       icon: MessageSquare
+    },
+    {
+      title: 'Avaliar Plataforma',
+      href: '/student/feedback',
+      icon: Star
     },
     {
       title: 'Suporte',
