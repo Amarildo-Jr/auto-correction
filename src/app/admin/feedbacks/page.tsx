@@ -79,7 +79,7 @@ export default function AdminFeedbacksPage() {
   const loadStats = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/admin/platform-evaluations/stats')
+      const response = await api.get('/api/admin/platform-evaluations/stats')
       setStats(response.data)
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error)
@@ -90,7 +90,7 @@ export default function AdminFeedbacksPage() {
 
   const loadEvaluations = async (page: number = 1) => {
     try {
-      const response = await api.get(`/admin/platform-evaluations?page=${page}&per_page=10`)
+      const response = await api.get(`/api/admin/platform-evaluations?page=${page}&per_page=10`)
       setEvaluations(response.data.evaluations)
       setCurrentPage(response.data.pagination.current_page)
       setTotalPages(response.data.pagination.pages)
@@ -102,7 +102,7 @@ export default function AdminFeedbacksPage() {
   const exportEvaluations = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/admin/platform-evaluations/export')
+      const response = await api.get('/api/admin/platform-evaluations/export')
 
       // Criar e baixar arquivo JSON
       const dataStr = JSON.stringify(response.data, null, 2)

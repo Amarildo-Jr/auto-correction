@@ -108,7 +108,7 @@ export default function StudentFeedbackPage() {
   useEffect(() => {
     const checkEvaluation = async () => {
       try {
-        const response = await api.get('/platform-evaluation/check')
+        const response = await api.get('/api/platform-evaluation/check')
         if (response.data.has_evaluation) {
           setHasEvaluation(true)
           setEvaluationDate(response.data.created_at)
@@ -140,7 +140,7 @@ export default function StudentFeedbackPage() {
     setLoading(true)
 
     try {
-      await api.post('/platform-evaluation', formData)
+      await api.post('/api/platform-evaluation', formData)
       alert('Avaliação enviada com sucesso! Obrigado pelo seu feedback.')
       setHasEvaluation(true)
       setEvaluationDate(new Date().toISOString())
