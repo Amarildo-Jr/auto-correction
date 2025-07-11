@@ -2,25 +2,41 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import api from '@/services/api'
 import {
+  Activity,
   AlertTriangle,
+  Award,
+  BarChart3,
+  Brain,
   CheckCircle,
   Download,
   MessageSquare,
   RefreshCw,
-  Star
+  Smartphone,
+  Star,
+  TrendingUp
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
+  Legend,
+  Line,
   Pie,
   PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -258,6 +274,7 @@ export default function AdminFeedbacksPage() {
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="ratings">Avaliações</TabsTrigger>
               <TabsTrigger value="feedback">Feedbacks</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics Avançado</TabsTrigger>
               <TabsTrigger value="technical">Informações Técnicas</TabsTrigger>
             </TabsList>
 
@@ -474,6 +491,337 @@ export default function AdminFeedbacksPage() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              {/* Gráficos Analíticos Avançados */}
+
+              {/* Análise Radar de Satisfação */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Análise Radar de Satisfação
+                    </CardTitle>
+                    <CardDescription>Visualização multidimensional das avaliações</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <RadarChart data={Object.entries(stats.rating_averages)
+                        .filter(([key]) => key !== 'responsiveness') // Removendo responsividade
+                        .map(([key, value]) => ({
+                          category: key === 'design' ? 'Design' :
+                            key === 'colors' ? 'Cores' :
+                              key === 'layout' ? 'Layout' :
+                                key === 'navigation' ? 'Navegação' :
+                                  key === 'menus' ? 'Menus' :
+                                    key === 'loading_speed' ? 'Velocidade' :
+                                      key === 'instructions' ? 'Instruções' :
+                                        key === 'registration' ? 'Registro' :
+                                          key === 'login' ? 'Login' :
+                                            key === 'class_enrollment' ? 'Inscrição' :
+                                              key === 'exam_taking' ? 'Realização de Provas' :
+                                                key === 'results' ? 'Resultados' : key,
+                          value: value
+                        }))}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 5]} tick={{ fontSize: 10 }} />
+                        <Radar
+                          name="Satisfação"
+                          dataKey="value"
+                          stroke="#3B82F6"
+                          fill="#3B82F6"
+                          fillOpacity={0.3}
+                          strokeWidth={2}
+                        />
+                        <Tooltip />
+                        <Legend />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Tendência de Problemas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5" />
+                      Análise de Problemas Reportados
+                    </CardTitle>
+                    <CardDescription>Distribuição dos tipos de problemas</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Erros Técnicos', value: stats.problems_reported.technical_errors, color: '#EF4444' },
+                            { name: 'Problemas Funcionais', value: stats.problems_reported.functionality_issues, color: '#F97316' },
+                            { name: 'Momentos de Confusão', value: stats.problems_reported.confusion_moments, color: '#EAB308' },
+                            { name: 'Recursos Ausentes', value: stats.problems_reported.missing_features, color: '#8B5CF6' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                        >
+                          {[
+                            { name: 'Erros Técnicos', value: stats.problems_reported.technical_errors },
+                            { name: 'Problemas Funcionais', value: stats.problems_reported.functionality_issues },
+                            { name: 'Momentos de Confusão', value: stats.problems_reported.confusion_moments },
+                            { name: 'Recursos Ausentes', value: stats.problems_reported.missing_features }
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Análise Comparativa de Interface */}
+              <div className="grid grid-cols-1 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Análise Comparativa de Interface (Sem Responsividade)
+                    </CardTitle>
+                    <CardDescription>Comparação das categorias de interface excluindo responsividade</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <ComposedChart
+                        data={Object.entries(stats.rating_averages)
+                          .filter(([key]) => ['design', 'colors', 'layout', 'navigation', 'menus'].includes(key))
+                          .map(([key, value]) => ({
+                            category: key === 'design' ? 'Design' :
+                              key === 'colors' ? 'Cores' :
+                                key === 'layout' ? 'Layout' :
+                                  key === 'navigation' ? 'Navegação' :
+                                    key === 'menus' ? 'Menus' : key,
+                            rating: value,
+                            target: 4.0 // Meta de satisfação
+                          }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="category" />
+                        <YAxis domain={[0, 5]} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="rating" fill="#3B82F6" name="Avaliação Atual" />
+                        <Line type="monotone" dataKey="target" stroke="#10B981" strokeWidth={3} name="Meta (4.0)" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Análise de Funcionalidades vs Experiência */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="h-5 w-5" />
+                      Performance de Funcionalidades
+                    </CardTitle>
+                    <CardDescription>Avaliação específica das funcionalidades</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <AreaChart
+                        data={Object.entries(stats.rating_averages)
+                          .filter(([key]) => ['registration', 'login', 'class_enrollment', 'exam_taking', 'results'].includes(key))
+                          .map(([key, value]) => ({
+                            functionality: key === 'registration' ? 'Registro' :
+                              key === 'login' ? 'Login' :
+                                key === 'class_enrollment' ? 'Inscrição' :
+                                  key === 'exam_taking' ? 'Provas' :
+                                    key === 'results' ? 'Resultados' : key,
+                            rating: value
+                          }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="functionality" />
+                        <YAxis domain={[0, 5]} />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="rating" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.6} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5" />
+                      Score de Usabilidade
+                    </CardTitle>
+                    <CardDescription>Métricas consolidadas de experiência</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Score Geral */}
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-blue-600 mb-2">
+                          {(Object.values(stats.rating_averages)
+                            .filter((_, index) => Object.keys(stats.rating_averages)[index] !== 'responsiveness')
+                            .reduce((a, b) => a + b, 0) /
+                            (Object.keys(stats.rating_averages).length - 1)).toFixed(1)}
+                        </div>
+                        <div className="text-lg text-muted-foreground">Score Geral (sem responsividade)</div>
+                      </div>
+
+                      {/* Métricas Individuais */}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Interface & Design</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-blue-500 h-2 rounded-full"
+                                style={{
+                                  width: `${((stats.rating_averages.design + stats.rating_averages.colors + stats.rating_averages.layout) / 3 / 5) * 100}%`
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">
+                              {((stats.rating_averages.design + stats.rating_averages.colors + stats.rating_averages.layout) / 3).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Navegação & Usabilidade</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-green-500 h-2 rounded-full"
+                                style={{
+                                  width: `${((stats.rating_averages.navigation + stats.rating_averages.menus + stats.rating_averages.instructions) / 3 / 5) * 100}%`
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">
+                              {((stats.rating_averages.navigation + stats.rating_averages.menus + stats.rating_averages.instructions) / 3).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Funcionalidades</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-purple-500 h-2 rounded-full"
+                                style={{
+                                  width: `${((stats.rating_averages.registration + stats.rating_averages.login + stats.rating_averages.exam_taking) / 3 / 5) * 100}%`
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">
+                              {((stats.rating_averages.registration + stats.rating_averages.login + stats.rating_averages.exam_taking) / 3).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Análise de Dispositivos e Recomendações */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Smartphone className="h-5 w-5" />
+                      Preferências de Dispositivos
+                    </CardTitle>
+                    <CardDescription>Análise de uso por tipo de dispositivo</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={stats.device_distribution.map(device => ({
+                        device: device.device === 'desktop' ? 'Desktop' :
+                          device.device === 'tablet' ? 'Tablet' :
+                            device.device === 'smartphone' ? 'Smartphone' : device.device,
+                        count: device.count,
+                        percentage: Math.round((device.count / stats.total_evaluations) * 100)
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="device" />
+                        <YAxis />
+                        <Tooltip formatter={(value, name) => [
+                          name === 'count' ? `${value} usuários` : `${value}%`,
+                          name === 'count' ? 'Quantidade' : 'Percentual'
+                        ]} />
+                        <Legend />
+                        <Bar dataKey="count" fill="#3B82F6" name="Quantidade" />
+                        <Bar dataKey="percentage" fill="#10B981" name="Percentual" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      Índice de Recomendação NPS
+                    </CardTitle>
+                    <CardDescription>Net Promoter Score baseado nas recomendações</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Cálculo do NPS */}
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-green-600 mb-2">
+                          {(() => {
+                            const promoters = stats.recommendation_distribution
+                              .filter(r => ['definitely_yes', 'probably_yes'].includes(r.recommendation))
+                              .reduce((sum, r) => sum + r.count, 0)
+                            const detractors = stats.recommendation_distribution
+                              .filter(r => ['probably_no', 'definitely_no'].includes(r.recommendation))
+                              .reduce((sum, r) => sum + r.count, 0)
+                            const total = stats.total_evaluations
+                            const nps = total > 0 ? Math.round(((promoters - detractors) / total) * 100) : 0
+                            return nps
+                          })()}
+                        </div>
+                        <div className="text-lg text-muted-foreground">NPS Score</div>
+                      </div>
+
+                      {/* Distribuição de Recomendações */}
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={stats.recommendation_distribution.map(rec => ({
+                          type: rec.recommendation === 'definitely_yes' ? 'Definitivamente Sim' :
+                            rec.recommendation === 'probably_yes' ? 'Provavelmente Sim' :
+                              rec.recommendation === 'maybe' ? 'Neutro' :
+                                rec.recommendation === 'probably_no' ? 'Provavelmente Não' :
+                                  rec.recommendation === 'definitely_no' ? 'Definitivamente Não' : rec.recommendation,
+                          count: rec.count,
+                          category: ['definitely_yes', 'probably_yes'].includes(rec.recommendation) ? 'Promotores' :
+                            rec.recommendation === 'maybe' ? 'Neutros' : 'Detratores'
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="type" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="count" fill="#3B82F6" />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </CardContent>
                 </Card>
