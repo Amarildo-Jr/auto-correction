@@ -367,27 +367,40 @@ export default function AdminFeedbacksPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(stats.rating_averages).map(([key, value]) => (
-                      <div key={key} className="flex justify-between items-center p-3 border rounded">
-                        <span className="text-sm font-medium capitalize">
-                          {key.replace('_', ' ')}
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-bold ${getRatingColor(value)}`}>
-                            {value.toFixed(1)}
+                    {Object.entries(stats.rating_averages)
+                      .filter(([key]) => key !== 'responsiveness') // Ocultar responsividade
+                      .map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-center p-3 border rounded">
+                          <span className="text-sm font-medium">
+                            {key === 'design' ? 'Design' :
+                              key === 'colors' ? 'Cores' :
+                                key === 'layout' ? 'Layout' :
+                                  key === 'navigation' ? 'Navegação' :
+                                    key === 'menus' ? 'Menus' :
+                                      key === 'loading_speed' ? 'Velocidade de Carregamento' :
+                                        key === 'instructions' ? 'Instruções' :
+                                          key === 'registration' ? 'Registro' :
+                                            key === 'login' ? 'Login' :
+                                              key === 'class_enrollment' ? 'Inscrição em Turmas' :
+                                                key === 'exam_taking' ? 'Realização de Provas' :
+                                                  key === 'results' ? 'Visualização de Resultados' : key}
                           </span>
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-4 h-4 ${star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                  }`}
-                              />
-                            ))}
+                          <div className="flex items-center space-x-2">
+                            <span className={`font-bold ${getRatingColor(value)}`}>
+                              {value.toFixed(1)}
+                            </span>
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                    }`}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </CardContent>
               </Card>
@@ -400,10 +413,23 @@ export default function AdminFeedbacksPage() {
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart
-                      data={Object.entries(stats.rating_averages).map(([key, value]) => ({
-                        category: key.replace('_', ' '),
-                        rating: value
-                      }))}
+                      data={Object.entries(stats.rating_averages)
+                        .filter(([key]) => key !== 'responsiveness') // Ocultar responsividade
+                        .map(([key, value]) => ({
+                          category: key === 'design' ? 'Design' :
+                            key === 'colors' ? 'Cores' :
+                              key === 'layout' ? 'Layout' :
+                                key === 'navigation' ? 'Navegação' :
+                                  key === 'menus' ? 'Menus' :
+                                    key === 'loading_speed' ? 'Velocidade de Carregamento' :
+                                      key === 'instructions' ? 'Instruções' :
+                                        key === 'registration' ? 'Registro' :
+                                          key === 'login' ? 'Login' :
+                                            key === 'class_enrollment' ? 'Inscrição em Turmas' :
+                                              key === 'exam_taking' ? 'Realização de Provas' :
+                                                key === 'results' ? 'Visualização de Resultados' : key,
+                          rating: value
+                        }))}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis
