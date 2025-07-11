@@ -188,6 +188,74 @@ export default function DashboardPage() {
     }
   ]
 
+  // Dados para o gráfico de dificuldade percebida
+  const difficultyData = [
+    { name: 'Muito Fácil', value: analytics.user_difficulty_stats.registration_very_easy || 0 },
+    { name: 'Fácil', value: analytics.user_difficulty_stats.registration_easy || 0 },
+    { name: 'Regular', value: analytics.user_difficulty_stats.registration_regular || 0 },
+    { name: 'Difícil', value: analytics.user_difficulty_stats.registration_difficult || 0 },
+    { name: 'Muito Difícil', value: analytics.user_difficulty_stats.registration_very_difficult || 0 }
+  ]
+
+  // Dados para o gráfico de problemas encontrados
+  const problemData = [
+    { name: 'Erros Técnicos', value: analytics.problem_stats.technical_errors || 0 },
+    { name: 'Problemas Funcionais', value: analytics.problem_stats.functionality_issues || 0 },
+    { name: 'Momentos de Confusão', value: analytics.problem_stats.confusion_moments || 0 },
+    { name: 'Recursos Ausentes', value: analytics.problem_stats.missing_features || 0 }
+  ]
+
+  // Dados para o gráfico de recomendação
+  const recommendationData = [
+    { name: 'Definitivamente Sim', value: analytics.recommendation_stats.definitely_yes || 0 },
+    { name: 'Provavelmente Sim', value: analytics.recommendation_stats.probably_yes || 0 },
+    { name: 'Talvez', value: analytics.recommendation_stats.maybe || 0 },
+    { name: 'Provavelmente Não', value: analytics.recommendation_stats.probably_no || 0 },
+    { name: 'Definitivamente Não', value: analytics.recommendation_stats.definitely_no || 0 }
+  ]
+
+  // Dados para o gráfico de dispositivos
+  const deviceData = [
+    { name: 'Desktop', value: analytics.device_stats.desktop || 0 },
+    { name: 'Tablet', value: analytics.device_stats.tablet || 0 },
+    { name: 'Smartphone', value: analytics.device_stats.smartphone || 0 }
+  ]
+
+  // Dados para gráfico de funcionalidades da plataforma
+  const platformFeaturesData = [
+    { name: 'Registro', value: analytics.platform_evaluations.registration_rating || 0 },
+    { name: 'Login', value: analytics.platform_evaluations.login_rating || 0 },
+    { name: 'Inscrição em Turmas', value: analytics.platform_evaluations.class_enrollment_rating || 0 },
+    { name: 'Realização de Provas', value: analytics.platform_evaluations.exam_taking_rating || 0 },
+    { name: 'Visualização de Resultados', value: analytics.platform_evaluations.results_rating || 0 }
+  ]
+
+  // Dados para análise temporal de notas
+  const gradeAnalysisData = Object.entries(analytics.grade_distribution).map(([grade, count]) => ({
+    grade: grade.replace('(', '').replace(')', ''),
+    count,
+    percentage: Math.round((count / (analytics.general_stats.total_students || 1)) * 100)
+  }))
+
+  // Dados para análise de eficiência do sistema
+  const systemEfficiencyData = [
+    {
+      name: 'Taxa de Conclusão',
+      value: analytics.performance_metrics.completion_rate,
+      color: '#10B981'
+    },
+    {
+      name: 'Correção Automática',
+      value: analytics.performance_metrics.auto_correction_rate,
+      color: '#3B82F6'
+    },
+    {
+      name: 'Satisfação da Plataforma',
+      value: analytics.performance_metrics.platform_satisfaction * 20, // convertendo para porcentagem
+      color: '#8B5CF6'
+    }
+  ]
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -222,7 +290,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Gráficos de Análise */}
+      {/* Gráficos de Análise Principal */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Distribuição de Notas */}
@@ -385,6 +453,171 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Análises Aprofundadas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Dificuldade Percebida pelos Usuários */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Dificuldade Percebida no Registro
+            </CardTitle>
+            <CardDescription>Facilidade relatada pelos usuários</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={difficultyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#10B981" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Problemas Encontrados */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Problemas Reportados
+            </CardTitle>
+            <CardDescription>Dificuldades encontradas pelos usuários</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={problemData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {problemData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Recomendações dos Usuários */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Recomendações dos Usuários
+            </CardTitle>
+            <CardDescription>Propensão de recomendação da plataforma</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={recommendationData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#8B5CF6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Dispositivos Utilizados */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Dispositivos Utilizados
+            </CardTitle>
+            <CardDescription>Preferências de acesso à plataforma</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={deviceData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {deviceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Funcionalidades da Plataforma */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" />
+              Avaliação das Funcionalidades
+            </CardTitle>
+            <CardDescription>Satisfação com recursos específicos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={platformFeaturesData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="name" />
+                <PolarRadiusAxis angle={90} domain={[0, 5]} />
+                <Radar
+                  name="Funcionalidades"
+                  dataKey="value"
+                  stroke="#F59E0B"
+                  fill="#F59E0B"
+                  fillOpacity={0.6}
+                />
+                <Tooltip />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Análise Comparativa de Desempenho */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Análise Comparativa de Desempenho
+            </CardTitle>
+            <CardDescription>Notas vs Taxa de Participação</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={gradeAnalysisData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="grade" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3B82F6" name="Quantidade" />
+                <Bar dataKey="percentage" fill="#10B981" name="Percentual" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Métricas de Performance */}
       <Card>
         <CardHeader>
@@ -424,6 +657,28 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Gráfico de Eficiência do Sistema */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Eficiência Geral do Sistema
+          </CardTitle>
+          <CardDescription>Comparativo de métricas principais</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={systemEfficiencyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} />
+              <Tooltip formatter={(value) => `${value}%`} />
+              <Bar dataKey="value" fill="#3B82F6" />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
     </div>

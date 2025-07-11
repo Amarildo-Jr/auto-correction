@@ -33,6 +33,18 @@ export interface AnalyticsData {
   platform_evaluations: {
     [key: string]: number
   }
+  user_difficulty_stats: {
+    [key: string]: number
+  }
+  problem_stats: {
+    [key: string]: number
+  }
+  recommendation_stats: {
+    [key: string]: number
+  }
+  device_stats: {
+    [key: string]: number
+  }
   performance_metrics: {
     completion_rate: number
     auto_correction_rate: number
