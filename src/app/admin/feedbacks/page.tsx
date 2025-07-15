@@ -3,21 +3,32 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import api from '@/services/api'
 import {
   Activity,
+  AlertCircle,
   AlertTriangle,
   Award,
   BarChart3,
   Brain,
+  Calendar,
   CheckCircle,
   Download,
+  FileText,
+  Lightbulb,
+  MessageCircle,
   MessageSquare,
+  Monitor,
+  Phone,
   RefreshCw,
   Smartphone,
   Star,
-  TrendingUp
+  Tablet,
+  ThumbsUp,
+  TrendingUp,
+  User
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
@@ -80,15 +91,58 @@ interface Evaluation {
   general_impression: string
   recommendation: string
   created_at: string
+
+  // Campos textuais
   additional_comments?: string
+  registration_problems?: string
+  login_comments?: string
+  class_finding_comments?: string
+  class_process_comments?: string
+  exam_instructions_comments?: string
+  timer_comments?: string
+  question_navigation_comments?: string
+  answer_area_comments?: string
+  exam_finish_comments?: string
+  results_comments?: string
+  essay_feedback_comments?: string
+  technical_errors_description?: string
+  functionality_issues_description?: string
+  confusion_description?: string
+  missing_features_description?: string
+  platform_changes?: string
+  desired_features?: string
+  ux_suggestions?: string
+
+  // Campos booleanos para problemas
   technical_errors: boolean
   functionality_issues: boolean
+  confusion_moments: boolean
+  missing_features: boolean
+
+  // Informações técnicas
+  device_type: string
+  browser: string
+  operating_system: string
+
+  // Campos específicos de experiência
+  registration_ease: string
+  login_intuitive: boolean
+  class_finding_easy: boolean
+  class_process_clear: boolean
+  exam_instructions_clear: boolean
+  timer_visible: boolean
+  question_navigation_easy: boolean
+  answer_area_adequate: boolean
+  exam_finish_difficulty: boolean
+  results_clear: boolean
+  essay_feedback_useful?: boolean
 }
 
 export default function AdminFeedbacksPage() {
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState<EvaluationStats | null>(null)
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
+  const [allEvaluations, setAllEvaluations] = useState<Evaluation[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
@@ -112,6 +166,15 @@ export default function AdminFeedbacksPage() {
       setTotalPages(response.data.pagination.pages)
     } catch (error) {
       console.error('Erro ao carregar avaliações:', error)
+    }
+  }
+
+  const loadAllEvaluations = async () => {
+    try {
+      const response = await api.get('/api/admin/platform-evaluations/export')
+      setAllEvaluations(response.data.evaluations)
+    } catch (error) {
+      console.error('Erro ao carregar todas as avaliações:', error)
     }
   }
 
@@ -140,6 +203,7 @@ export default function AdminFeedbacksPage() {
   useEffect(() => {
     loadStats()
     loadEvaluations()
+    loadAllEvaluations()
   }, [])
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
@@ -172,6 +236,113 @@ export default function AdminFeedbacksPage() {
     return map[imp] || imp
   }
 
+  const getRegistrationEaseText = (ease: string) => {
+    const map: { [key: string]: string } = {
+      'very_easy': 'Muito fácil',
+      'easy': 'Fácil',
+      'regular': 'Regular',
+      'difficult': 'Difícil',
+      'very_difficult': 'Muito difícil'
+    }
+    return map[ease] || ease
+  }
+
+  const getDeviceIcon = (device: string) => {
+    switch (device) {
+      case 'desktop': return <Monitor className="w-4 h-4" />
+      case 'tablet': return <Tablet className="w-4 h-4" />
+      case 'smartphone': return <Phone className="w-4 h-4" />
+      default: return <Monitor className="w-4 h-4" />
+    }
+  }
+
+  // Função para filtrar comentários não vazios
+  const getTextualComments = (evaluation: Evaluation) => {
+    const comments = []
+
+    if (evaluation.registration_problems) {
+      comments.push({ category: 'Problemas no Registro', text: evaluation.registration_problems })
+    }
+    if (evaluation.login_comments) {
+      comments.push({ category: 'Comentários sobre Login', text: evaluation.login_comments })
+    }
+    if (evaluation.class_finding_comments) {
+      comments.push({ category: 'Busca de Turmas', text: evaluation.class_finding_comments })
+    }
+    if (evaluation.class_process_comments) {
+      comments.push({ category: 'Processo de Inscrição', text: evaluation.class_process_comments })
+    }
+    if (evaluation.exam_instructions_comments) {
+      comments.push({ category: 'Instruções da Prova', text: evaluation.exam_instructions_comments })
+    }
+    if (evaluation.timer_comments) {
+      comments.push({ category: 'Timer da Prova', text: evaluation.timer_comments })
+    }
+    if (evaluation.question_navigation_comments) {
+      comments.push({ category: 'Navegação entre Questões', text: evaluation.question_navigation_comments })
+    }
+    if (evaluation.answer_area_comments) {
+      comments.push({ category: 'Área de Resposta', text: evaluation.answer_area_comments })
+    }
+    if (evaluation.exam_finish_comments) {
+      comments.push({ category: 'Finalização da Prova', text: evaluation.exam_finish_comments })
+    }
+    if (evaluation.results_comments) {
+      comments.push({ category: 'Visualização de Resultados', text: evaluation.results_comments })
+    }
+    if (evaluation.essay_feedback_comments) {
+      comments.push({ category: 'Feedback das Redações', text: evaluation.essay_feedback_comments })
+    }
+    if (evaluation.technical_errors_description) {
+      comments.push({ category: 'Erros Técnicos', text: evaluation.technical_errors_description })
+    }
+    if (evaluation.functionality_issues_description) {
+      comments.push({ category: 'Problemas de Funcionalidade', text: evaluation.functionality_issues_description })
+    }
+    if (evaluation.confusion_description) {
+      comments.push({ category: 'Momentos de Confusão', text: evaluation.confusion_description })
+    }
+    if (evaluation.missing_features_description) {
+      comments.push({ category: 'Recursos Ausentes', text: evaluation.missing_features_description })
+    }
+    if (evaluation.platform_changes) {
+      comments.push({ category: 'Mudanças Sugeridas', text: evaluation.platform_changes })
+    }
+    if (evaluation.desired_features) {
+      comments.push({ category: 'Recursos Desejados', text: evaluation.desired_features })
+    }
+    if (evaluation.ux_suggestions) {
+      comments.push({ category: 'Sugestões de UX', text: evaluation.ux_suggestions })
+    }
+    if (evaluation.additional_comments) {
+      comments.push({ category: 'Comentários Adicionais', text: evaluation.additional_comments })
+    }
+
+    return comments
+  }
+
+  // Função para extrair todos os comentários textuais por categoria
+  const getAllCommentsByCategory = () => {
+    const commentsByCategory: { [key: string]: Array<{ user: string, role: string, text: string, date: string }> } = {}
+
+    allEvaluations.forEach(evaluation => {
+      const comments = getTextualComments(evaluation)
+      comments.forEach(comment => {
+        if (!commentsByCategory[comment.category]) {
+          commentsByCategory[comment.category] = []
+        }
+        commentsByCategory[comment.category].push({
+          user: evaluation.user_name,
+          role: evaluation.user_role,
+          text: comment.text,
+          date: evaluation.created_at
+        })
+      })
+    })
+
+    return commentsByCategory
+  }
+
   if (loading && !stats) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -188,7 +359,7 @@ export default function AdminFeedbacksPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Feedbacks da Plataforma</h1>
-          <p className="text-gray-600">Análise das avaliações dos usuários</p>
+          <p className="text-gray-600">Análise completa das avaliações dos usuários com comentários detalhados</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={loadStats} variant="outline" disabled={loading}>
@@ -236,15 +407,17 @@ export default function AdminFeedbacksPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Problemas Reportados</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Comentários Textuais</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.problems_reported.technical_errors + stats.problems_reported.functionality_issues}
+                  {allEvaluations.reduce((total, evaluation) => {
+                    return total + getTextualComments(evaluation).length
+                  }, 0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Requerem atenção
+                  Comentários detalhados
                 </p>
               </CardContent>
             </Card>
@@ -274,6 +447,8 @@ export default function AdminFeedbacksPage() {
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="ratings">Avaliações</TabsTrigger>
               <TabsTrigger value="feedback">Feedbacks</TabsTrigger>
+              <TabsTrigger value="comments">Comentários Detalhados</TabsTrigger>
+              <TabsTrigger value="problems">Problemas & Sugestões</TabsTrigger>
               <TabsTrigger value="analytics">Analytics Avançado</TabsTrigger>
               <TabsTrigger value="technical">Informações Técnicas</TabsTrigger>
             </TabsList>
@@ -484,40 +659,290 @@ export default function AdminFeedbacksPage() {
                     <CardTitle>Feedbacks Recentes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4 max-h-80 overflow-y-auto">
-                      {evaluations.slice(0, 5).map((evaluation) => (
-                        <div key={evaluation.id} className="border-b pb-3">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <span className="font-medium">{evaluation.user_name}</span>
-                              <Badge variant="outline" className="ml-2">
-                                {evaluation.user_role}
+                    <ScrollArea className="h-80">
+                      <div className="space-y-4">
+                        {evaluations.slice(0, 5).map((evaluation) => (
+                          <div key={evaluation.id} className="border-b pb-3">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                <span className="font-medium">{evaluation.user_name}</span>
+                                <Badge variant="outline">
+                                  {evaluation.user_role}
+                                </Badge>
+                                {getDeviceIcon(evaluation.device_type)}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Calendar className="w-4 h-4" />
+                                {new Date(evaluation.created_at).toLocaleDateString('pt-BR')}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Badge
+                                variant={evaluation.general_impression === 'excellent' || evaluation.general_impression === 'good' ? 'default' : 'secondary'}
+                              >
+                                {getImpressionText(evaluation.general_impression)}
+                              </Badge>
+                              <Badge
+                                variant={evaluation.recommendation.includes('yes') ? 'default' : 'secondary'}
+                              >
+                                {getRecommendationText(evaluation.recommendation)}
                               </Badge>
                             </div>
-                            <span className="text-sm text-gray-500">
-                              {new Date(evaluation.created_at).toLocaleDateString('pt-BR')}
-                            </span>
+
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>
+                                <strong>Sistema:</strong> {evaluation.operating_system} • <strong>Navegador:</strong> {evaluation.browser}
+                              </div>
+
+                              {evaluation.additional_comments && (
+                                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                                  <MessageCircle className="w-4 h-4 inline mr-1" />
+                                  <strong>Comentário:</strong> &quot;{evaluation.additional_comments.substring(0, 150)}{evaluation.additional_comments.length > 150 ? '...' : ''}&quot;
+                                </div>
+                              )}
+
+                              {/* Mostrar número de comentários adicionais */}
+                              {getTextualComments(evaluation).length > 0 && (
+                                <div className="mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    <FileText className="w-3 h-3 mr-1" />
+                                    {getTextualComments(evaluation).length} comentários detalhados
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Badge
-                              variant={evaluation.general_impression === 'excellent' || evaluation.general_impression === 'good' ? 'default' : 'secondary'}
-                            >
-                              {getImpressionText(evaluation.general_impression)}
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Paginação simplificada */}
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadEvaluations(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  Anterior
+                </Button>
+                <span className="px-4 py-2 text-sm">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadEvaluations(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                >
+                  Próximo
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="comments" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    Comentários Detalhados por Categoria
+                  </CardTitle>
+                  <CardDescription>
+                    Todos os comentários textuais organizados por categoria de funcionalidade
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[600px]">
+                    <div className="space-y-6">
+                      {Object.entries(getAllCommentsByCategory()).map(([category, comments]) => (
+                        <div key={category} className="border rounded-lg p-4">
+                          <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                            <MessageSquare className="w-5 h-5" />
+                            {category}
+                            <Badge variant="secondary" className="ml-2">
+                              {comments.length} comentários
                             </Badge>
-                            <Badge
-                              variant={evaluation.recommendation.includes('yes') ? 'default' : 'secondary'}
-                            >
-                              {getRecommendationText(evaluation.recommendation)}
-                            </Badge>
+                          </h3>
+
+                          <div className="space-y-3">
+                            {comments.map((comment, index) => (
+                              <div key={index} className="bg-gray-50 p-3 rounded border-l-4 border-blue-200">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4" />
+                                    <span className="font-medium text-sm">{comment.user}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {comment.role}
+                                    </Badge>
+                                  </div>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(comment.date).toLocaleDateString('pt-BR')}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-700 leading-relaxed">
+                                  &quot;{comment.text}&quot;
+                                </p>
+                              </div>
+                            ))}
                           </div>
-                          {evaluation.additional_comments && (
-                            <p className="text-sm text-gray-600 mt-2">
-                              &quot;{evaluation.additional_comments.substring(0, 100)}...&quot;
-                            </p>
-                          )}
                         </div>
                       ))}
                     </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="problems" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Problemas Técnicos */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      Problemas Técnicos Reportados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-80">
+                      <div className="space-y-3">
+                        {allEvaluations
+                          .filter(evaluation => evaluation.technical_errors && evaluation.technical_errors_description)
+                          .map((evaluation, index) => (
+                            <div key={index} className="bg-red-50 p-3 rounded border-l-4 border-red-300">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-sm">{evaluation.user_name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {evaluation.user_role}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-700">
+                                {evaluation.technical_errors_description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                                {getDeviceIcon(evaluation.device_type)}
+                                {evaluation.browser} • {evaluation.operating_system}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+
+                {/* Problemas de Funcionalidade */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-orange-500" />
+                      Problemas de Funcionalidade
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-80">
+                      <div className="space-y-3">
+                        {allEvaluations
+                          .filter(evaluation => evaluation.functionality_issues && evaluation.functionality_issues_description)
+                          .map((evaluation, index) => (
+                            <div key={index} className="bg-orange-50 p-3 rounded border-l-4 border-orange-300">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-sm">{evaluation.user_name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {evaluation.user_role}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-700">
+                                &quot;{evaluation.functionality_issues_description}&quot;
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+
+                {/* Sugestões de Melhorias */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="h-5 w-5 text-yellow-500" />
+                      Sugestões de Melhorias
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-80">
+                      <div className="space-y-3">
+                        {allEvaluations
+                          .filter(evaluation => evaluation.platform_changes || evaluation.ux_suggestions)
+                          .map((evaluation, index) => (
+                            <div key={index} className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-300">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-sm">{evaluation.user_name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {evaluation.user_role}
+                                </Badge>
+                              </div>
+                              {evaluation.platform_changes && (
+                                <div className="mb-2">
+                                  <strong className="text-xs text-gray-600">Mudanças sugeridas:</strong>
+                                  <p className="text-sm text-gray-700">&quot;{evaluation.platform_changes}&quot;</p>
+                                </div>
+                              )}
+                              {evaluation.ux_suggestions && (
+                                <div>
+                                  <strong className="text-xs text-gray-600">Sugestões de UX:</strong>
+                                  <p className="text-sm text-gray-700">&quot;{evaluation.ux_suggestions}&quot;</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+
+                {/* Recursos Desejados */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ThumbsUp className="h-5 w-5 text-green-500" />
+                      Recursos Desejados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-80">
+                      <div className="space-y-3">
+                        {allEvaluations
+                          .filter(evaluation => evaluation.desired_features || evaluation.missing_features_description)
+                          .map((evaluation, index) => (
+                            <div key={index} className="bg-green-50 p-3 rounded border-l-4 border-green-300">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-sm">{evaluation.user_name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {evaluation.user_role}
+                                </Badge>
+                              </div>
+                              {evaluation.desired_features && (
+                                <div className="mb-2">
+                                  <strong className="text-xs text-gray-600">Recursos desejados:</strong>
+                                  <p className="text-sm text-gray-700">&quot;{evaluation.desired_features}&quot;</p>
+                                </div>
+                              )}
+                              {evaluation.missing_features_description && (
+                                <div>
+                                  <strong className="text-xs text-gray-600">Recursos ausentes:</strong>
+                                  <p className="text-sm text-gray-700">&quot;{evaluation.missing_features_description}&quot;</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </ScrollArea>
                   </CardContent>
                 </Card>
               </div>
@@ -901,6 +1326,71 @@ export default function AdminFeedbacksPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Detalhes Técnicos por Usuário */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Monitor className="h-5 w-5" />
+                    Detalhes Técnicos dos Usuários
+                  </CardTitle>
+                  <CardDescription>
+                    Informações técnicas detalhadas de cada avaliação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-80">
+                    <div className="space-y-3">
+                      {allEvaluations.map((evaluation, index) => (
+                        <div key={index} className="border rounded p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              <span className="font-medium">{evaluation.user_name}</span>
+                              <Badge variant="outline">
+                                {evaluation.user_role}
+                              </Badge>
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {new Date(evaluation.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              {getDeviceIcon(evaluation.device_type)}
+                              <span className="font-medium">Dispositivo:</span>
+                              <span>{evaluation.device_type}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Navegador:</span>
+                              <span className="ml-1">{evaluation.browser}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Sistema:</span>
+                              <span className="ml-1">{evaluation.operating_system}</span>
+                            </div>
+                          </div>
+
+                          {/* Problemas Técnicos */}
+                          {(evaluation.technical_errors || evaluation.functionality_issues) && (
+                            <div className="mt-2 p-2 bg-red-50 rounded">
+                              <div className="flex items-center gap-1 text-sm font-medium text-red-700">
+                                <AlertTriangle className="w-4 h-4" />
+                                Problemas Reportados:
+                              </div>
+                              <div className="text-sm text-red-600 mt-1">
+                                {evaluation.technical_errors && <span>• Erros técnicos </span>}
+                                {evaluation.functionality_issues && <span>• Problemas funcionais</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </>
